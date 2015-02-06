@@ -30,8 +30,9 @@ module.exports = function stubDriver(pathToMachinepack) {
         return nextTestCase();
       }
 
-      console.log('\n • should exit with `'+testCase.outcome+'`'+ (_.isUndefined(jsonInputVals)?'':' given input values: `'+jsonInputVals+'`'));
       return nextTestCase(function (err) {
+
+        console.log('\n • should exit with `'+testCase.outcome+'`'+ (_.isUndefined(jsonInputVals)?'':' given input values: `'+jsonInputVals+'`'));
         if (err) {
           console.error('   (X) failed - '+err);
           return;
