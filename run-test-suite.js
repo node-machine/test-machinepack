@@ -5,11 +5,10 @@
 var util = require('util');
 var _ = require('lodash');
 var async = require('async');
-var Pack = require('./');
 
 
 
-module.exports = function (testSuite, eachTest, done){
+module.exports = function (Pack, testSuite, eachTest, done){
 
   var machine = _.find(Pack, {identity: testSuite.machine});
   if (!machine) {

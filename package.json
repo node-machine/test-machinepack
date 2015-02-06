@@ -11,12 +11,15 @@
     "test-runner",
     "test-driver"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "lodash": "^3.1.0",
+    "async": "^0.9.0"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/mikermcneil/test-machinepack.git"
   },
-  "license":"MIT",
+  "license": "MIT",
   "engines": {
     "node": ">= 0.10.0",
     "npm": ">= 1.4.0"

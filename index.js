@@ -43,6 +43,7 @@ module.exports = function (beforeRunningAnyTests, eachTestSuite, done){
 
         // And run them
         require('./run-test-suite')(
+          Pack,
           testSuite,
           function eachTestCase (testCase, runTest){
             onTestFn(testCase, runTest);
