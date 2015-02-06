@@ -4,7 +4,7 @@
 
 var util = require('util');
 var _ = require('lodash');
-var runAllTeests = require('./run-all-tests');
+var runAllTests = require('./run-all-tests');
 
 
 /**
@@ -13,7 +13,7 @@ var runAllTeests = require('./run-all-tests');
  */
 module.exports = function stubDriver(pathToMachinepack) {
 
-  runAllTeests(pathToMachinepack, function beforeRunningAnyTests(opts, done){
+  runAllTests(pathToMachinepack, function beforeRunningAnyTests(opts, done){
     done();
   }, function eachMachineSuite(machineIdentity, runTests){
     console.log('\n\ntesting `'+machineIdentity+'` machine...\n================================\n');
