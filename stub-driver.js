@@ -16,7 +16,7 @@ module.exports = function stubDriver(pathToMachinepack) {
   runAllTeests(pathToMachinepack, function beforeRunningAnyTests(opts, done){
     done();
   }, function eachMachineSuite(machineIdentity, runTests){
-    console.log('\n\ntesting `'+machineIdentity+'` machine...\n\n================================\n');
+    console.log('\n\ntesting `'+machineIdentity+'` machine...\n================================\n');
     runTests(function onTest(testCase, nextTestCase){
       var jsonInputVals;
       try {
@@ -33,10 +33,10 @@ module.exports = function stubDriver(pathToMachinepack) {
       console.log('\n • should exit with `'+testCase.outcome+'`'+ (_.isUndefined(jsonInputVals)?'':' given input values: `'+jsonInputVals+'`'));
       return nextTestCase(function (err) {
         if (err) {
-          console.error('FAILED!  Details: '+err);
+          console.error('   (X) failed - '+err);
           return;
         }
-        console.log('Passed.');
+        console.log('   (+) passed');
         return;
       });
     });

@@ -32,7 +32,7 @@ module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
       return done(new Error(util.format('Encountered error loading or parsing pack\'s package.json file (located at `%s`). Details:\n',packageJsonPath, e)));
     }
 
-    async.map(machineIdentities, function (machineIdentity, next_machineSuite){
+    async.mapSeries(machineIdentities, function (machineIdentity, next_machineSuite){
 
       eachTestSuite(machineIdentity, function (onTestFn, informSuiteFinished){
 
