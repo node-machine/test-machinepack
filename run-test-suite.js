@@ -15,7 +15,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
     throw new Error(util.format('Unrecognized machine: `%s`', testSuite.machine));
   }
 
-  async.mapSeries(testSuite.expectations, function (testCase, next_testCase){
+  async.map(testSuite.expectations, function (testCase, next_testCase){
 
     // Defer test
     if (testCase.todo){
@@ -29,6 +29,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
     }
 
     eachTest(testCase, function (informTestFinished){
+
       // Configure the inputs
       var machineInstance = machine(testCase.using||{});
 
