@@ -22,6 +22,13 @@ testmachinepack
 ```
 
 
+## Writing tests
+
+So what do the tests look like?
+Check out this example from [machinepack-npm](http://node-machine.org/machinepack-npm):
+https://github.com/mikermcneil/machinepack-npm/blob/master/tests/list-packages.json
+
+
 ## Custom drivers
 
 Want to build a driver for the test framework of your choice?
