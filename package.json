@@ -1,0 +1,24 @@
+{
+  "name": "test-machinepack",
+  "author": "Mike McNeil <@mikermcneil>",
+  "version": "0.1.0",
+  "description": "Test driver for machinepacks",
+  "keywords": [
+    "test-machine",
+    "test-machinepack",
+    "node-machine",
+    "machine",
+    "test-runner",
+    "test-driver"
+  ],
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mikermcneil/test-machinepack.git"
+  },
+  "license":"MIT",
+  "engines": {
+    "node": ">= 0.10.0",
+    "npm": ">= 1.4.0"
+  }
+}
