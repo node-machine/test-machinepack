@@ -47,7 +47,8 @@ module.exports = function (Pack, testSuite, eachTest, done){
         callbacks[exitName] = function (result){
           exitsTraversed.push({
             returnValue: result,
-            exitName: exitName
+            exitName: exitName,
+            duration: machineInstance._msElapsed
           });
 
           if (exitsTraversed.length > 1) {
@@ -64,7 +65,8 @@ module.exports = function (Pack, testSuite, eachTest, done){
       // halted every 50ms.
       //
       // (we can safely do this AFTER calling .exec() on the machine since we know there
-      //  will always be at least a setTimeout(0) before the `fn` runs.)
+      //  will always be at least a setTimeout(0) before the `fn` runs-- compare with
+      //  `.execSync()`, where we wouldn't have such a guarantee)
       async.whilst(
         function check() {
           return exitsTraversed.length < 1;
@@ -92,6 +94,13 @@ module.exports = function (Pack, testSuite, eachTest, done){
             })(),
           };
 
+          // Save other metadata about the run
+          testResultObj.actual = {
+            result: exitsTraversed[0].returnValue,
+            outcome: exitsTraversed[0].exitName,
+            duration: exitsTraversed[0].duration
+          };
+
           // Report back to test engine
           if (testResultObj.pass) {
             informTestFinished();
@@ -100,16 +109,28 @@ module.exports = function (Pack, testSuite, eachTest, done){
             var _testFailedErr = new Error();
             _testFailedErr.message = util.format('Failed test #%s for machine `%s`.', '?',testSuite.machine);
             _.extend(_testFailedErr, testCase);
-            _.extend(_testFailedErr, {
-              actual: {
-                // TODO: support other assertions
-                outcome: exitsTraversed[0].exitName
-              }
-            });
+            _testFailedErr.actual = testResultObj.actual;
 
-            // enhance result msg
+            // Generate pretty-printed version of result
+            if (!_.isUndefined(_testFailedErr.actual.result)) {
+              _testFailedErr.actual.prettyPrintedResult = (function (){
+                var _prettyPrintedResult = testResultObj.actual.result;
+                if (_.isObject(_prettyPrintedResult) && _prettyPrintedResult instanceof Error) {
+                  _prettyPrintedResult = _prettyPrintedResult.stack;
+                }
+                else {
+                  _prettyPrintedResult = util.inspect(testResultObj.actual.result);
+                }
+                return _prettyPrintedResult;
+              })();
+            }
+
+            // Enhance result msg using outcome and prettyPrintedResult.
             if (_.isString(testCase.outcome)) {
-              _testFailedErr.message += util.format('Expected outcome "%s" but actually the machine triggered its "%s" exit.', testCase.outcome, _testFailedErr.actual.outcome);
+              _testFailedErr.message += util.format('Expected outcome "%s" but actually the machine triggered its "%s" exit', testCase.outcome, _testFailedErr.actual.outcome);
+              if (!_.isUndefined(testResultObj.actual.result)) {
+                _testFailedErr.message += util.format(' with result:\n %s', util.inspect(_testFailedErr.actual.prettyPrintedResult));
+              }
             }
 
             informTestFinished(_testFailedErr);
