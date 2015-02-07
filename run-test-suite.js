@@ -129,7 +129,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
             if (_.isString(testCase.outcome)) {
               _testFailedErr.message += util.format('Expected outcome "%s" but actually the machine triggered its "%s" exit', testCase.outcome, _testFailedErr.actual.outcome);
               if (!_.isUndefined(testResultObj.actual.result)) {
-                _testFailedErr.message += util.format(' with result:\n %s', util.inspect(_testFailedErr.actual.prettyPrintedResult));
+                _testFailedErr.message += util.format(' with a %s:\n %s', _.isArray(_testFailedErr.actual.result)?'array':typeof _testFailedErr.actual.result, _testFailedErr.actual.prettyPrintedResult);
               }
             }
 
