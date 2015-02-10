@@ -24,7 +24,44 @@ testmachinepack
 
 ## Writing tests
 
-So what do the tests look like?
+Tests will be written in JSON or [JSON5](http://json5.org/) format (with .json5 file ending). For each machine you have define you create a JSON file with the same name within a `tests` folder. If you install [machinepack](https://github.com/node-machine/machinepack) and run `pm scrub` skeleton files will be created for you.
+
+The general format looks like this:
+
+```js
+//machine-name.json, or machine-name.json5 if you want comment support
+{
+  //name of the machine as per filename
+  "machine": "machine-name",
+  //within expectations you define the tests of your machine
+  //based on the inputs and exits you have defined
+  "expectations": [
+    {
+      //todo truthy means the test will be skipped
+      "todo": true,
+      "using": {
+        "variable1": ""
+      },
+      "outcome": ""
+    },
+    {
+      "using": {
+        "variable1": "value"
+      },
+      "outcome": "error"
+    },
+    {
+      "using": {
+        "variable": "value1",
+        "variable2": "value2"
+      },
+      "outcome": "error"
+    }
+  ]
+}
+```
+
+So what do real tests look like?
 Check out this example from [machinepack-npm](http://node-machine.org/machinepack-npm):
 https://github.com/mikermcneil/machinepack-npm/blob/master/tests/list-packages.json
 
