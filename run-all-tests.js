@@ -44,6 +44,9 @@ module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
         try {
           testSuite = require(pathToTestSuiteModule + '.json');
         } catch (e) {
+          if (e.toString().indexOf('SyntaxError') > -1) {
+            throw e;
+          }
           testSuite = require(pathToTestSuiteModule + '.json5');
         }
 
