@@ -6,6 +6,8 @@ var util = require('util');
 var _ = require('lodash');
 var async = require('async');
 var path = require('path');
+//replace's nodejs' require to support requiring of .json5 files
+require('json5/lib/require');
 
 
 module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
@@ -36,9 +38,17 @@ module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
 
       eachTestSuite(machineIdentity, function (onTestFn, informSuiteFinished){
 
-        // Load machine tests
-        var pathToTestSuiteModule = path.resolve(testsPath, machineIdentity + '.json');
-        var testSuite = require(pathToTestSuiteModule);
+        // Load machine tests, supporting .json and .json5 files
+        var pathToTestSuiteModule = path.resolve(testsPath, machineIdentity);
+        var testSuite;
+        try {
+          testSuite = require(pathToTestSuiteModule + '.json');
+        } catch (e) {
+          if (e.toString().indexOf('SyntaxError') > -1) {
+            throw e;
+          }
+          testSuite = require(pathToTestSuiteModule + '.json5');
+        }
 
         // And run them
         require('./run-test-suite')(
