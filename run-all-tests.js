@@ -44,11 +44,32 @@ module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
         var testSuite;
         try {
           testSuite = require(pathToTestSuiteModule + '.json');
-        } catch (e) {
-          if (e.toString().indexOf('SyntaxError') > -1) {
-            throw e;
+        } catch (e_cannotFindJsonFile) {
+          // TODO: (-> low priority)
+          // instead of checking for syntax error, do the inverse,
+          // checking that if this is a MODULE_NOT_FOUND error. if it's not
+          // MODULE_NOT_FOUND error, we should bail out by calling next_machineSuite
+          // with an error (and I think that should work gracefully)
+          if (e_cannotFindJsonFile.toString().indexOf('SyntaxError') > -1) {
+            throw e_cannotFindJsonFile;
           }
-          testSuite = require(pathToTestSuiteModule + '.json5');
+          try {
+            testSuite = require(pathToTestSuiteModule + '.json5');
+          }
+          catch (err_cannotFindJson5File) {
+            // if this is a MODULE_NOT_FOUND error, then the file doens't exist.
+            // so we can skip this particular test
+            if (err_cannotFindJson5File.code === 'MODULE_NOT_FOUND') {
+              // TODO: consider adding a special case that drivers can use
+              // to optionally provide special handling for skipped tests
+
+              // Call informational callback, if provided
+              if (_.isFunction(informSuiteFinished)) {
+                informSuiteFinished();
+              }
+              return next_machineSuite();
+            }
+          }
         }
 
         // And run them
@@ -60,7 +81,9 @@ module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
           },
           function afterwards (err, finalTestResults) {
             if (err) {
+              // TODO: better error msg which includes info about the test suite
               console.error('Internal error while running tests:',err);
+              next_machineSuite();
               return;
             }
 
