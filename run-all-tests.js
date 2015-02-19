@@ -13,7 +13,8 @@ require('json5/lib/require');
 module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
 
   // Use provided machinepack path
-  var mainPath = path.resolve(mpPath, 'index.js');
+  var mainPath = path.resolve(mpPath);
+  // var mainPath = path.resolve(mpPath, 'index.js');
   var packageJsonPath = path.resolve(mpPath, 'package.json');
   var testsPath = path.resolve(mpPath, 'tests');
 
