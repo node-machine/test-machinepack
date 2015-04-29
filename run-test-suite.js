@@ -30,8 +30,33 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
     eachTest(testCase, function (informTestFinished){
 
+      // Ensure input configuration is ready to use
+      // (i.e. parse JSON for inputs w/ typeclass/example of dictionary or array)
+      //
+      // TODO: replace this with shared logic from relevant code in the `machinepack` CLI
+      //       and in machinepack-machines.
+      testCase.using = _.reduce(testCase.using || {}, function (memo, configuredValue, inputName) {
+        var inputDef = machine.inputs[inputName];
+
+        if (!inputDef) {
+          throw new Error('A test specifies a value for an input which does not actually exist in the machine definition (`'+inputName+'`).');
+        }
+
+        if (inputDef.typeclass === 'dictionary' || inputDef.typeclass === 'array' || _.isArray(inputDef.example) || _.isPlainObject(inputDef.example)) {
+          try {
+            configuredValue = JSON.parse(configuredValue);
+          }
+          catch (e) {
+            throw new Error('Could not parse the value for the `'+inputName+'` input specified by a test:\n'+e.stack);
+          }
+        }
+
+        memo[inputName] = configuredValue;
+        return memo;
+      }, {});
+
       // Configure the inputs
-      var machineInstance = machine(testCase.using||{});
+      var machineInstance = machine(testCase.using);
 
       // Build an empty `exitsTraversed` array that will track which exit was traversed,
       // and its return value (if applicable).
