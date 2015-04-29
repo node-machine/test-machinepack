@@ -43,7 +43,21 @@ module.exports = function (Pack, testSuite, eachTest, done){
         }
 
         // POTENTIALLY: also try to parse JSON for ALL input values for now (b/c of testscribe)
-        if (inputDef.typeclass === 'dictionary' || inputDef.typeclass === 'array' || _.isArray(inputDef.example) || _.isPlainObject(inputDef.example)) {
+        if (
+          inputDef.typeclass === 'dictionary' || inputDef.typeclass === 'array' ||
+          _.isArray(inputDef.example) || _.isPlainObject(inputDef.example) ||
+          (inputDef.typeclass === '*' && (function determineIfConfdValIsJsonEncodedDictOrArray(){
+            var attemptedParse;
+            try {
+              attemptedParse = JSON.parse(configuredValue);
+              if (_.isArray(attemptedParse) || _.isPlainObject(attemptedParse)) {
+                return true;
+              }
+            }
+            catch (e) {}
+            return false;
+          })() )
+        ) {
           try {
             configuredValue = JSON.parse(configuredValue);
           }
