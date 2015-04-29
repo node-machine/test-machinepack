@@ -33,6 +33,8 @@ module.exports = function (Pack, testSuite, eachTest, done){
       // Ensure input configuration is ready to use
       // (i.e. parse JSON for inputs w/ typeclass/example of dictionary or array)
       //
+      // ACTUALLY: also parse JSON for ALL input values (b/c of testscribe)
+      //
       // TODO: replace this with shared logic from relevant code in the `machinepack` CLI
       //       and in machinepack-machines.
       testCase.using = _.reduce(testCase.using || {}, function (memo, configuredValue, inputName) {
@@ -42,14 +44,15 @@ module.exports = function (Pack, testSuite, eachTest, done){
           throw new Error('A test specifies a value for an input which does not actually exist in the machine definition (`'+inputName+'`).');
         }
 
-        if (inputDef.typeclass === 'dictionary' || inputDef.typeclass === 'array' || _.isArray(inputDef.example) || _.isPlainObject(inputDef.example)) {
+        // ACTUALLY: also parse JSON for ALL input values for now (b/c of testscribe)
+        // if (inputDef.typeclass === 'dictionary' || inputDef.typeclass === 'array' || _.isArray(inputDef.example) || _.isPlainObject(inputDef.example)) {
           try {
             configuredValue = JSON.parse(configuredValue);
           }
           catch (e) {
             throw new Error('Could not parse the value for the `'+inputName+'` input specified by a test:\n'+e.stack);
           }
-        }
+        // }
 
         memo[inputName] = configuredValue;
         return memo;
