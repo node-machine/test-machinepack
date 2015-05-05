@@ -57,7 +57,7 @@ module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
             testSuite = require(pathToTestSuiteModule + '.json5');
           }
           catch (err_cannotFindJson5File) {
-            // if this is a MODULE_NOT_FOUND error, then the file doens't exist.
+            // if this is a MODULE_NOT_FOUND error, then the file doesn't exist.
             // so we can skip this particular test
             if (err_cannotFindJson5File.code === 'MODULE_NOT_FOUND') {
               // TODO: consider adding a special case that drivers can use
