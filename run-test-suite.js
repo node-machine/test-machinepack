@@ -35,40 +35,52 @@ module.exports = function (Pack, testSuite, eachTest, done){
       //
       // TODO: replace this with shared logic from relevant code in the `machinepack` CLI
       //       and in machinepack-machines.
-      testCase.using = _.reduce(testCase.using || {}, function (memo, configuredValue, inputName) {
-        var inputDef = machine.inputs[inputName];
+      try {
+        testCase.using = _.reduce(testCase.using || {}, function (memo, configuredValue, inputName) {
+          var inputDef = machine.inputs[inputName];
+          if (!inputDef) {
+            throw new Error('A test specifies a value for an input which does not actually exist in the machine definition (`'+inputName+'`).');
+          }
 
-        if (!inputDef) {
-          throw new Error('A test specifies a value for an input which does not actually exist in the machine definition (`'+inputName+'`).');
-        }
-
-        // POTENTIALLY: also try to parse JSON for ALL input values for now (b/c of testscribe)
-        if (
-          inputDef.typeclass === 'dictionary' || inputDef.typeclass === 'array' ||
-          _.isArray(inputDef.example) || _.isPlainObject(inputDef.example) ||
-          (inputDef.typeclass === '*' && (function determineIfConfdValIsJsonEncodedDictOrArray(){
-            var attemptedParse;
-            try {
-              attemptedParse = JSON.parse(configuredValue);
-              if (_.isArray(attemptedParse) || _.isPlainObject(attemptedParse)) {
-                return true;
+          if (
+            // If the configured value is a string...
+            _.isString(configuredValue) &&
+            // And the input type is a dictionary or array...
+            (inputDef.typeclass === 'dictionary' || inputDef.typeclass === 'array' || _.isArray(inputDef.example) || _.isPlainObject(inputDef.example)) ||
+            // Or the input type is '*' and the result of parsing it looks like an array or object...
+            (inputDef.typeclass === '*' && (function determineIfConfdValIsJsonEncodedDictOrArray(){
+              var attemptedParse;
+              try {
+                attemptedParse = JSON.parse(configuredValue);
+                if (_.isArray(attemptedParse) || _.isPlainObject(attemptedParse)) {
+                  return true;
+                }
               }
+              catch (e) {}
+              return false;
+            })()
+          ))
+           // ...then try parsing the configured value as JSON
+          {
+            try {
+              configuredValue = JSON.parse(configuredValue);
             }
-            catch (e) {}
-            return false;
-          })() )
-        ) {
-          try {
-            configuredValue = JSON.parse(configuredValue);
+            catch (e) {
+              throw new Error('Could not parse the value for the `'+inputName+'` input specified by a test:\n'+e.stack);
+            }
           }
-          catch (e) {
-            throw new Error('Could not parse the value for the `'+inputName+'` input specified by a test:\n'+e.stack);
-          }
-        }
 
-        memo[inputName] = configuredValue;
-        return memo;
-      }, {});
+          memo[inputName] = configuredValue;
+          return memo;
+        }, {});
+      }
+      // If the configured value couldn't be parsed, consider the test a failure
+      catch (e) {
+        if (_.isFunction(informTestFinished)){
+          informTestFinished(e);
+        }
+        return next_testCase();
+      }
 
       // Configure the inputs
       var machineInstance = machine(testCase.using);
