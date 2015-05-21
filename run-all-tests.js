@@ -35,6 +35,7 @@ module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
       return done(new Error(util.format('Encountered error loading or parsing pack\'s package.json file (located at `%s`). Details:\n',packageJsonPath, e)));
     }
 
+    var missingSuites = [];
     async.map(machineIdentities, function (machineIdentity, next_machineSuite){
 
       eachTestSuite(machineIdentity, function (onTestFn, informSuiteFinished){
@@ -60,6 +61,7 @@ module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
             // if this is a MODULE_NOT_FOUND error, then the file doesn't exist.
             // so we can skip this particular test
             if (err_cannotFindJson5File.code === 'MODULE_NOT_FOUND') {
+              missingSuites.push(machineIdentity);
               // TODO: consider adding a special case that drivers can use
               // to optionally provide special handling for skipped tests
 
@@ -99,9 +101,9 @@ module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
       });
     }, function (err, results) {
       if (err) {
-        return done(err);
+        return done(err, missingSuites);
       }
-      return done(null, results);
+      return done(null, missingSuites);
     });
   });
 };
