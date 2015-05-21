@@ -159,10 +159,11 @@ module.exports = function (Pack, testSuite, eachTest, done){
           }
           else {
             var _testFailedErr = new Error();
-            _testFailedErr.message = util.format('Failed test #%s for machine `%s`.', '?',testSuite.machine);
+            _testFailedErr.message = '';
             _.extend(_testFailedErr, testCase);
             _testFailedErr.actual = testResultObj.actual;
-
+            // Fake the stack for Mocha's sake, since it will otherwise print the error message twice.
+            _testFailedErr.stack = "----------------------------";
             // Generate pretty-printed version of result
             if (!_.isUndefined(_testFailedErr.actual.result)) {
               _testFailedErr.actual.prettyPrintedResult = (function (){
