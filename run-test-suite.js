@@ -163,7 +163,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
             _.extend(_testFailedErr, testCase);
             _testFailedErr.actual = testResultObj.actual;
             // Fake the stack for Mocha's sake, since it will otherwise print the error message twice.
-            _testFailedErr.stack = "----------------------------";
+            _testFailedErr.stack = '----------------------------';
             // Generate pretty-printed version of result
             if (!_.isUndefined(_testFailedErr.actual.result)) {
               _testFailedErr.actual.prettyPrintedResult = (function (){
