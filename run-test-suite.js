@@ -15,6 +15,8 @@ module.exports = function (Pack, testSuite, eachTest, done){
     throw new Error(util.format('Unrecognized machine: `%s`', testSuite.machine));
   }
 
+  // TODO: use `runMachine` from machinepack-machines in here instead to avoid unnecessary duplication of code
+
   async.map(testSuite.expectations, function (testCase, next_testCase){
 
     // Defer test
