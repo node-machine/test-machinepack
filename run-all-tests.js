@@ -101,9 +101,9 @@ module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
       });
     }, function (err, results) {
       if (err) {
-        return done(err, null, missingSuites);
+        return done(err, missingSuites);
       }
-      return done(null, results, missingSuites);
+      return done(null, missingSuites);
     });
   });
 };
