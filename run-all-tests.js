@@ -99,7 +99,7 @@ module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
         );
 
       });
-    }, function (err, results) {
+    }, function (err) {
       if (err) {
         return done(err, missingSuites);
       }
