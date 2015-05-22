@@ -17,9 +17,9 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
   // TODO: use `runMachine` from machinepack-machines in here instead to avoid unnecessary duplication of code
 
-  async.map(testSuite.expectations, function (testCase, next_testCase){
+  async.map(testSuite.expectations, function eachTestCase(testCase, next_testCase){
 
-    // Defer test
+    // If marked as `todo`, defer this test
     if (testCase.todo){
       eachTest(testCase, function (informTestFinished){
         if (_.isFunction(informTestFinished)){
@@ -30,7 +30,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
       return;
     }
 
-    eachTest(testCase, function (informTestFinished){
+    eachTest(testCase, function actuallyRunAndTestMachine(informTestFinished){
 
       // Ensure input configuration is ready to use
       // (i.e. parse JSON for inputs w/ typeclass/example of dictionary or array)
@@ -38,7 +38,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
       // TODO: replace this with shared logic from relevant code in the `machinepack` CLI
       //       and in machinepack-machines.
       try {
-        testCase.using = _.reduce(testCase.using || {}, function (memo, configuredValue, inputName) {
+        testCase.using = _.reduce(testCase.using || {}, function foldInputVal(memo, configuredValue, inputName) {
           var inputDef = machine.inputs[inputName];
           if (!inputDef) {
             throw new Error('A test specifies a value for an input which does not actually exist in the machine definition (`'+inputName+'`).');
@@ -197,7 +197,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
       );
 
     });
-  }, function (err, results) {
+  }, function afterAsyncMap (err, results) {
     if (err) {
       if (_.isFunction(done)) {
         return done(err);
