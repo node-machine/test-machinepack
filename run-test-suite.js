@@ -106,26 +106,37 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
           // Build test result object
           var testResultObj = {
-            pass: (function _determineIfTestCasePassed(){
-              var _passed = true;
 
-              // If specified, test `outcome` assertion (which exit was traversed)
-              if (_.isString(testCase.outcome)) {
-                _passed = _passed && (testCase.outcome === whatActuallyHappened.outcome);
-              }
+            wrongOutcome: false,
 
-              // If specified, test JSON-encoded `output` assertion (output value returned from exit)
-              if (!_.isUndefined(outputAssertion)) {
-                // TODO: test output
-                // rttc.isEqual(outputAssertion, , machine.inputs);
-              }
+            wrongOutput: false,
 
-              // TODO: support `maxDuration` assertion
-              // TODO: support `after` assertion (custom asynchronous function)
+            // TODO: support `maxDuration` assertion
+            tookTooLong: false,
 
-              return _passed;
-            })(),
+            // TODO: support `after` assertion (custom asynchronous function)
+            failedPostcondition: false
           };
+
+          // If expected output is specified, but expected *outcome* isn't, assume
+          // the test is referring to the success exit.
+          if (!_.isUndefined(outputAssertion) && !_.isString(testCase.outcome)) {
+            testCase.outcome = 'success';
+          }
+
+          // If specified, test `outcome` assertion (which exit was traversed)
+          if (_.isString(testCase.outcome)) {
+            testResultObj.wrongOutcome = (testCase.outcome !== whatActuallyHappened.outcome);
+          }
+
+          // If specified, test JSON-encoded `output` assertion (output value returned from exit)
+          if (!_.isUndefined(outputAssertion)) {
+            var exitDef = machine.exits[testCase.outcome];
+            testResultObj.wrongOutput = ! rttc.isEqual(outputAssertion, whatActuallyHappened.output, exitDef.example);
+          }
+
+          // Determine whether the test passed overall or not.
+          testResultObj.pass = !testResultObj.wrongOutcome && !testResultObj.wrongOutput && !testResultObj.tookTooLong && !testResultObj.failedPostcondition;
 
           // Save other metadata about the run
           testResultObj.actual = whatActuallyHappened;
@@ -154,7 +165,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
 
           // Enhance result msg using outcome and inspectedOutput.
-          if (_.isString(testCase.outcome)) {
+          if (testResultObj.wrongOutcome) {
             _testFailedErr.message += util.format('  Expected outcome "%s" but actually the machine triggered its "%s" exit', testCase.outcome, _testFailedErr.actual.outcome);
             if (!_.isUndefined(testResultObj.actual.output)) {
               _testFailedErr.message += util.format(' and returned a %s:\n %s', _.isArray(_testFailedErr.actual.output)?'array':typeof _testFailedErr.actual.output, _testFailedErr.actual.inspectedOutput);
@@ -165,8 +176,8 @@ module.exports = function (Pack, testSuite, eachTest, done){
           }
 
           // Enhance result msg using expected `output` and actual output.
-          if (!_.isUndefined(outputAssertion)) {
-            // TODO
+          if (testResultObj.wrongOutput) {
+            _testFailedErr.message += util.format('  Expected output was: `%s` -- but actually the machine returned: `%s`', util.inspect(outputAssertion, false, null), util.inspect(_testFailedErr.actual.output, false, null));
           }
 
           // Trigger `informTestFinished` function if it was provided
