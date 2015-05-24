@@ -5,7 +5,7 @@
 var util = require('util');
 var _ = require('lodash');
 var async = require('async');
-
+var Machines = require('machinepack-machines');
 
 
 module.exports = function (Pack, testSuite, eachTest, done){
@@ -32,106 +32,139 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
     eachTest(testCase, function actuallyRunAndTestMachine(informTestFinished){
 
-      // Ensure input configuration is ready to use
-      // (i.e. parse JSON for inputs w/ typeclass/example of dictionary or array)
-      //
-      // TODO: replace this with shared logic from relevant code in the `machinepack` CLI
-      //       and in machinepack-machines.
-      try {
-        testCase.using = _.reduce(testCase.using || {}, function foldInputVal(memo, configuredValue, inputName) {
-          var inputDef = machine.inputs[inputName];
-          if (!inputDef) {
-            throw new Error('A test specifies a value for an input which does not actually exist in the machine definition (`'+inputName+'`).');
+      Machines.runMachine({
+        machinepackPath: Pack._meta.path,
+        identity: testSuite.machine,
+        inputValues: []
+      }).exec({
+        error: function (err){
+          // Trigger `informTestFinished` function if it was provided
+          if (_.isFunction(informTestFinished)){
+            informTestFinished(err);
           }
+          // Then either way, ignore the error and continue on to the next test case.
+          return next_testCase();
+        },
+        success: function (whatHappened){
 
-          if (
-            // If the configured value is a string...
-            _.isString(configuredValue) &&
-            // And the input type is a dictionary or array...
-            (inputDef.typeclass === 'dictionary' || inputDef.typeclass === 'array' || _.isArray(inputDef.example) || _.isPlainObject(inputDef.example)) ||
-            // Or the input type is '*' and the result of parsing it looks like an array or object...
-            (inputDef.typeclass === '*' && (function determineIfConfdValIsJsonEncodedDictOrArray(){
-              var attemptedParse;
-              try {
-                attemptedParse = JSON.parse(configuredValue);
-                if (_.isArray(attemptedParse) || _.isPlainObject(attemptedParse)) {
-                  return true;
-                }
-              }
-              catch (e) {}
-              return false;
-            })()
-          ))
-           // ...then try parsing the configured value as JSON
-          {
-            try {
-              configuredValue = JSON.parse(configuredValue);
-            }
-            catch (e) {
-              throw new Error('Could not parse the value for the `'+inputName+'` input specified by a test:\n'+e.stack);
-            }
+          // {
+          //   exit: 'success',
+          //   jsonValue: '{"stuff": "things"}',
+          //   inspectedValue: '{ stuff: "things" }',
+          //   void: false
+          // }
+
+
+          // Trigger `informTestFinished` function if it was provided
+          if (_.isFunction(informTestFinished)){
+            informTestFinished(err);
           }
+          // Then either way, continue on to the next test case.
+          return next_testCase();
 
-          memo[inputName] = configuredValue;
-          return memo;
-        }, {});
-      }
-      // If the configured value couldn't be parsed, consider the test a failure
-      catch (e) {
-        if (_.isFunction(informTestFinished)){
-          informTestFinished(e);
         }
-        return next_testCase();
-      }
-
-      // Configure the inputs
-      var machineInstance = machine(testCase.using);
-
-      // Build an empty `exitsTraversed` array that will track which exit was traversed,
-      // and its return value (if applicable).
-      var exitsTraversed = [ /* e.g. {
-        returnValue: {some: 'stuff'}
-        exitName: 'whateverExit'
-      } */ ];
-
-      // Loop through each of the machine's declared exits and set up
-      // a handler for it so we know which exit was traversed.
-      var callbacks = {};
-      _.each(machineInstance.exits, function (exitDef, exitName){
-        callbacks[exitName] = function (result){
-          exitsTraversed.push({
-            returnValue: result,
-            exitName: exitName,
-            duration: machineInstance._msElapsed
-          });
-
-          if (exitsTraversed.length > 1) {
-            // This should never happen (log a warning)
-            console.warn('Invalid machine; exited multiple times:', exitsTraversed);
-          }
-        };
       });
 
-      // Now start executing the machine
-      machineInstance.exec(callbacks);
+      // // Ensure input configuration is ready to use
+      // // (i.e. parse JSON for inputs w/ typeclass/example of dictionary or array)
+      // //
+      // // TODO: replace this with shared logic from relevant code in the `machinepack` CLI
+      // //       and in machinepack-machines.
+      // try {
+      //   testCase.using = _.reduce(testCase.using || {}, function foldInputVal(memo, configuredValue, inputName) {
+      //     var inputDef = machine.inputs[inputName];
+      //     if (!inputDef) {
+      //       throw new Error('A test specifies a value for an input which does not actually exist in the machine definition (`'+inputName+'`).');
+      //     }
 
-      // And set up a `whilst` loop that checks to see if the machine has
-      // halted every 50ms.
-      //
-      // (we can safely do this AFTER calling .exec() on the machine since we know there
-      //  will always be at least a setTimeout(0) before the `fn` runs-- compare with
-      //  `.execSync()`, where we wouldn't have such a guarantee)
-      async.whilst(
-        function check() {
-          return exitsTraversed.length < 1;
-        },
-        function lap(next){
-          setTimeout(function (){
-            next();
-          }, 50);
-        },
-        function afterwards(err) {
-          if (err) return next_testCase(err);
+      //     if (
+      //       // If the configured value is a string...
+      //       _.isString(configuredValue) &&
+      //       // And the input type is a dictionary or array...
+      //       (inputDef.typeclass === 'dictionary' || inputDef.typeclass === 'array' || _.isArray(inputDef.example) || _.isPlainObject(inputDef.example)) ||
+      //       // Or the input type is '*' and the result of parsing it looks like an array or object...
+      //       (inputDef.typeclass === '*' && (function determineIfConfdValIsJsonEncodedDictOrArray(){
+      //         var attemptedParse;
+      //         try {
+      //           attemptedParse = JSON.parse(configuredValue);
+      //           if (_.isArray(attemptedParse) || _.isPlainObject(attemptedParse)) {
+      //             return true;
+      //           }
+      //         }
+      //         catch (e) {}
+      //         return false;
+      //       })()
+      //     ))
+      //      // ...then try parsing the configured value as JSON
+      //     {
+      //       try {
+      //         configuredValue = JSON.parse(configuredValue);
+      //       }
+      //       catch (e) {
+      //         throw new Error('Could not parse the value for the `'+inputName+'` input specified by a test:\n'+e.stack);
+      //       }
+      //     }
+
+      //     memo[inputName] = configuredValue;
+      //     return memo;
+      //   }, {});
+      // }
+      // // If the configured value couldn't be parsed, consider the test a failure
+      // catch (e) {
+      //   if (_.isFunction(informTestFinished)){
+      //     informTestFinished(e);
+      //   }
+      //   return next_testCase();
+      // }
+
+      // // Configure the inputs
+      // var machineInstance = machine(testCase.using);
+
+      // // Build an empty `exitsTraversed` array that will track which exit was traversed,
+      // // and its return value (if applicable).
+      // var exitsTraversed = [ /* e.g. {
+      //   returnValue: {some: 'stuff'}
+      //   exitName: 'whateverExit'
+      // } */ ];
+
+      // // Loop through each of the machine's declared exits and set up
+      // // a handler for it so we know which exit was traversed.
+      // var callbacks = {};
+      // _.each(machineInstance.exits, function (exitDef, exitName){
+      //   callbacks[exitName] = function (result){
+      //     exitsTraversed.push({
+      //       returnValue: result,
+      //       exitName: exitName,
+      //       duration: machineInstance._msElapsed
+      //     });
+
+      //     if (exitsTraversed.length > 1) {
+      //       // This should never happen (log a warning)
+      //       console.warn('Invalid machine; exited multiple times:', exitsTraversed);
+      //     }
+      //   };
+      // });
+
+      // // Now start executing the machine
+      // machineInstance.exec(callbacks);
+
+      // // And set up a `whilst` loop that checks to see if the machine has
+      // // halted every 50ms.
+      // //
+      // // (we can safely do this AFTER calling .exec() on the machine since we know there
+      // //  will always be at least a setTimeout(0) before the `fn` runs-- compare with
+      // //  `.execSync()`, where we wouldn't have such a guarantee)
+      // async.whilst(
+      //   function check() {
+      //     return exitsTraversed.length < 1;
+      //   },
+      //   function lap(next){
+      //     setTimeout(function (){
+      //       next();
+      //     }, 50);
+      //   },
+      //   function afterwards(err) {
+      //     if (err) return next_testCase(err);
 
           // Build test result object
           var testResultObj = {
@@ -193,8 +226,8 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
           // Continue to next test
           return next_testCase(null, testResultObj);
-        }
-      );
+      //   }
+      // );
 
     });
   }, function afterAsyncMap (err, results) {

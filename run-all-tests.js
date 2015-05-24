@@ -21,6 +21,10 @@ module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
   // Load pack
   var Pack = require(mainPath);
 
+  // Encode machinepack path on disk on the Pack object
+  // so it can be used in `run-test-suite`
+  Pack._meta = {path: mainPath};
+
   // TODO: load opts from somewhere, normalize them, then pass them to `beforeRunningAnyTests` fn in driver.
   var opts = {};
 
