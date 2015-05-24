@@ -15,7 +15,6 @@ module.exports = function (Pack, testSuite, eachTest, done){
     throw new Error(util.format('Unrecognized machine: `%s`', testSuite.machine));
   }
 
-  // TODO: use `runMachine` from machinepack-machines in here instead to avoid unnecessary duplication of code
 
   async.map(testSuite.expectations, function eachTestCase(testCase, next_testCase){
 
@@ -32,10 +31,18 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
     eachTest(testCase, function actuallyRunAndTestMachine(informTestFinished){
 
+      // Use `runMachine` from machinepack-machines in here instead to avoid
+      // unnecessary duplication of code
       Machines.runMachine({
         machinepackPath: Pack._meta.path,
         identity: testSuite.machine,
-        inputValues: []
+        inputValues: _.reduce(testCase.using, function (memo, inputVal, inputName){
+          memo.push({
+            name: inputName,
+            value: inputVal
+          });
+          return memo;
+        }, [])
       }).exec({
         error: function (err){
           // Trigger `informTestFinished` function if it was provided
@@ -45,126 +52,15 @@ module.exports = function (Pack, testSuite, eachTest, done){
           // Then either way, ignore the error and continue on to the next test case.
           return next_testCase();
         },
-        success: function (whatHappened){
+        success: function (whatActuallyHappened){
 
           // {
           //   exit: 'success',
           //   jsonValue: '{"stuff": "things"}',
           //   inspectedValue: '{ stuff: "things" }',
+          //   duration: 3252,
           //   void: false
           // }
-
-
-          // Trigger `informTestFinished` function if it was provided
-          if (_.isFunction(informTestFinished)){
-            informTestFinished(err);
-          }
-          // Then either way, continue on to the next test case.
-          return next_testCase();
-
-        }
-      });
-
-      // // Ensure input configuration is ready to use
-      // // (i.e. parse JSON for inputs w/ typeclass/example of dictionary or array)
-      // //
-      // // TODO: replace this with shared logic from relevant code in the `machinepack` CLI
-      // //       and in machinepack-machines.
-      // try {
-      //   testCase.using = _.reduce(testCase.using || {}, function foldInputVal(memo, configuredValue, inputName) {
-      //     var inputDef = machine.inputs[inputName];
-      //     if (!inputDef) {
-      //       throw new Error('A test specifies a value for an input which does not actually exist in the machine definition (`'+inputName+'`).');
-      //     }
-
-      //     if (
-      //       // If the configured value is a string...
-      //       _.isString(configuredValue) &&
-      //       // And the input type is a dictionary or array...
-      //       (inputDef.typeclass === 'dictionary' || inputDef.typeclass === 'array' || _.isArray(inputDef.example) || _.isPlainObject(inputDef.example)) ||
-      //       // Or the input type is '*' and the result of parsing it looks like an array or object...
-      //       (inputDef.typeclass === '*' && (function determineIfConfdValIsJsonEncodedDictOrArray(){
-      //         var attemptedParse;
-      //         try {
-      //           attemptedParse = JSON.parse(configuredValue);
-      //           if (_.isArray(attemptedParse) || _.isPlainObject(attemptedParse)) {
-      //             return true;
-      //           }
-      //         }
-      //         catch (e) {}
-      //         return false;
-      //       })()
-      //     ))
-      //      // ...then try parsing the configured value as JSON
-      //     {
-      //       try {
-      //         configuredValue = JSON.parse(configuredValue);
-      //       }
-      //       catch (e) {
-      //         throw new Error('Could not parse the value for the `'+inputName+'` input specified by a test:\n'+e.stack);
-      //       }
-      //     }
-
-      //     memo[inputName] = configuredValue;
-      //     return memo;
-      //   }, {});
-      // }
-      // // If the configured value couldn't be parsed, consider the test a failure
-      // catch (e) {
-      //   if (_.isFunction(informTestFinished)){
-      //     informTestFinished(e);
-      //   }
-      //   return next_testCase();
-      // }
-
-      // // Configure the inputs
-      // var machineInstance = machine(testCase.using);
-
-      // // Build an empty `exitsTraversed` array that will track which exit was traversed,
-      // // and its return value (if applicable).
-      // var exitsTraversed = [ /* e.g. {
-      //   returnValue: {some: 'stuff'}
-      //   exitName: 'whateverExit'
-      // } */ ];
-
-      // // Loop through each of the machine's declared exits and set up
-      // // a handler for it so we know which exit was traversed.
-      // var callbacks = {};
-      // _.each(machineInstance.exits, function (exitDef, exitName){
-      //   callbacks[exitName] = function (result){
-      //     exitsTraversed.push({
-      //       returnValue: result,
-      //       exitName: exitName,
-      //       duration: machineInstance._msElapsed
-      //     });
-
-      //     if (exitsTraversed.length > 1) {
-      //       // This should never happen (log a warning)
-      //       console.warn('Invalid machine; exited multiple times:', exitsTraversed);
-      //     }
-      //   };
-      // });
-
-      // // Now start executing the machine
-      // machineInstance.exec(callbacks);
-
-      // // And set up a `whilst` loop that checks to see if the machine has
-      // // halted every 50ms.
-      // //
-      // // (we can safely do this AFTER calling .exec() on the machine since we know there
-      // //  will always be at least a setTimeout(0) before the `fn` runs-- compare with
-      // //  `.execSync()`, where we wouldn't have such a guarantee)
-      // async.whilst(
-      //   function check() {
-      //     return exitsTraversed.length < 1;
-      //   },
-      //   function lap(next){
-      //     setTimeout(function (){
-      //       next();
-      //     }, 50);
-      //   },
-      //   function afterwards(err) {
-      //     if (err) return next_testCase(err);
 
           // Build test result object
           var testResultObj = {
@@ -172,7 +68,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
               var _passed = true;
 
               if (_.isString(testCase.outcome)) {
-                _passed = _passed && (testCase.outcome === exitsTraversed[0].exitName);
+                _passed = _passed && (testCase.outcome === whatActuallyHappened.exit);
               }
 
               // TODO: support other assertions
@@ -183,53 +79,62 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
           // Save other metadata about the run
           testResultObj.actual = {
-            result: exitsTraversed[0].returnValue,
-            outcome: exitsTraversed[0].exitName,
-            duration: exitsTraversed[0].duration
+            result: whatActuallyHappened.jsonValue,
+            outcome: whatActuallyHappened.exit,
+            duration: whatActuallyHappened.duration
           };
 
-          // Report back to test engine
+          // Report back to test engine w/ a success
           if (testResultObj.pass) {
-            informTestFinished();
+
+            // Trigger `informTestFinished` function if it was provided
+            if (_.isFunction(informTestFinished)){
+              informTestFinished();
+            }
+            // Continue to next test
+            return next_testCase(null, testResultObj);
           }
-          else {
-            var _testFailedErr = new Error();
-            _testFailedErr.message = '';
-            _testFailedErr.message = util.format('Failed test #%s for machine `%s`.', '?',testSuite.machine);
-            _.extend(_testFailedErr, testCase);
-            _testFailedErr.actual = testResultObj.actual;
 
-            // Generate pretty-printed version of result
-            if (!_.isUndefined(_testFailedErr.actual.result)) {
-              _testFailedErr.actual.prettyPrintedResult = (function (){
-                var _prettyPrintedResult = testResultObj.actual.result;
-                if (_.isObject(_prettyPrintedResult) && _prettyPrintedResult instanceof Error) {
-                  _prettyPrintedResult = _prettyPrintedResult.stack;
-                }
-                else {
-                  _prettyPrintedResult = util.inspect(testResultObj.actual.result);
-                }
-                return _prettyPrintedResult;
-              })();
-            }
+          // Report back to test engine w/ an error
+          var _testFailedErr = new Error();
+          _testFailedErr.message = '';
+          _testFailedErr.message = util.format('Failed test #%s for machine `%s`.', '?',testSuite.machine);
+          _.extend(_testFailedErr, testCase);
+          _testFailedErr.actual = testResultObj.actual;
 
-            // Enhance result msg using outcome and prettyPrintedResult.
-            if (_.isString(testCase.outcome)) {
-              _testFailedErr.message += util.format('Expected outcome "%s" but actually the machine triggered its "%s" exit', testCase.outcome, _testFailedErr.actual.outcome);
-              if (!_.isUndefined(testResultObj.actual.result)) {
-                _testFailedErr.message += util.format(' with a %s:\n %s', _.isArray(_testFailedErr.actual.result)?'array':typeof _testFailedErr.actual.result, _testFailedErr.actual.prettyPrintedResult);
+          // Generate pretty-printed version of result
+          if (!_.isUndefined(_testFailedErr.actual.result)) {
+            _testFailedErr.actual.prettyPrintedResult = (function (){
+              var _prettyPrintedResult = testResultObj.actual.result;
+              if (_.isObject(_prettyPrintedResult) && _prettyPrintedResult instanceof Error) {
+                _prettyPrintedResult = _prettyPrintedResult.stack;
               }
-            }
+              else {
+                _prettyPrintedResult = util.inspect(testResultObj.actual.result);
+              }
+              return _prettyPrintedResult;
+            })();
+          }
 
+          // Enhance result msg using outcome and prettyPrintedResult.
+          if (_.isString(testCase.outcome)) {
+            _testFailedErr.message += util.format('Expected outcome "%s" but actually the machine triggered its "%s" exit', testCase.outcome, _testFailedErr.actual.outcome);
+            if (!_.isUndefined(testResultObj.actual.result)) {
+              _testFailedErr.message += util.format(' with a %s:\n %s', _.isArray(_testFailedErr.actual.result)?'array':typeof _testFailedErr.actual.result, _testFailedErr.actual.prettyPrintedResult);
+            }
+          }
+
+          // Trigger `informTestFinished` function if it was provided
+          if (_.isFunction(informTestFinished)){
             informTestFinished(_testFailedErr);
           }
 
           // Continue to next test
           return next_testCase(null, testResultObj);
-      //   }
-      // );
 
-    });
+        } // </runMachine.success>
+      }); // </runMachine()>
+    }); // </eachTest()>
   }, function afterAsyncMap (err, results) {
     if (err) {
       if (_.isFunction(done)) {
