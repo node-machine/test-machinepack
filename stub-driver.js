@@ -2,7 +2,6 @@
  * Module depenencies
  */
 
-var util = require('util');
 var _ = require('lodash');
 var runAllTests = require('./run-all-tests');
 
