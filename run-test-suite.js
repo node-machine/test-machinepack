@@ -9,7 +9,6 @@ var Machines = require('machinepack-machines');
 var rttc = require('rttc');
 
 
-
 module.exports = function (Pack, testSuite, eachTest, done){
 
   var machine = _.find(Pack, {identity: testSuite.machine});
@@ -37,23 +36,24 @@ module.exports = function (Pack, testSuite, eachTest, done){
       var inputValues;
       try {
         inputValues = _.reduce(testCase.using, function (memo, inputVal, inputName){
-          var valToUse;
-          try {
-            valToUse = JSON.parse(inputVal);
-          }
-          catch (e) {
-            // For backwards compatibility, tolerate values that aren't JSON-encoded.
-            valToUse = inputVal;
-          }
-
           // Handle case where a value was provided for an unknown input
           var inputDef = machine.inputs[inputName];
           if (!inputDef) {
             throw new Error('Test specifies a value for an input which does not actually exist in the machine definition (`'+inputName+'`).');
           }
+
+          var valToUse;
+          try {
+            valToUse = JSON.parse(inputVal);
+          }
+          catch (e) {
+            // For backwards compatibility, also tolerate values that aren't JSON-encoded.
+            valToUse = inputVal;
+          }
+
           memo.push({
             name: inputName,
-            value: valToUse
+            value: valToUseg
           });
           return memo;
         }, []);
@@ -103,6 +103,16 @@ module.exports = function (Pack, testSuite, eachTest, done){
           // (backwards compatibility for `returns` assertion)
           var outputAssertion = !_.isUndefined(testCase.output) ? testCase.output : testCase.returns;
 
+          var jsonStringifiedOutputAssertion = outputAssertion;
+          // If output assertion is not a string already, create a JSON.stringified version of it.
+          if (!_.isString(outputAssertion)) {
+            try {
+              jsonStringifiedOutputAssertion = JSON.stringify(outputAssertion);
+            }
+            catch (e) {
+              // If it can't be stringified for some reason, keep it as is.
+            }
+          }
 
           // Build test result object
           var testResultObj = {
@@ -132,7 +142,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
           // If specified, test JSON-encoded `output` assertion (output value returned from exit)
           if (!_.isUndefined(outputAssertion)) {
             var exitDef = machine.exits[testCase.outcome];
-            testResultObj.wrongOutput = ! rttc.isEqual(outputAssertion, whatActuallyHappened.output, exitDef.example);
+            testResultObj.wrongOutput = ! rttc.isEqual(jsonStringifiedOutputAssertion, whatActuallyHappened.jsonStringifiedOutput, exitDef.example);
           }
 
           // Determine whether the test passed overall or not.
@@ -177,7 +187,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
           // Enhance result msg using expected `output` and actual output.
           if (testResultObj.wrongOutput) {
-            _testFailedErr.message += util.format('  Expected output was: `%s` -- but actually the machine returned: `%s`', util.inspect(outputAssertion, false, null), util.inspect(_testFailedErr.actual.output, false, null));
+            _testFailedErr.message += util.format('  Expected output was: `%s` (a %s) -- but actually the machine returned: `%s` (a %s)', util.inspect(outputAssertion, false, null), rttc.getDisplayType(outputAssertion), util.inspect(_testFailedErr.actual.output, false, null), rttc.getDisplayType(_testFailedErr.actual.output));
           }
 
           // Trigger `informTestFinished` function if it was provided
