@@ -53,7 +53,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
           memo.push({
             name: inputName,
-            value: valToUseg
+            value: valToUse
           });
           return memo;
         }, []);
