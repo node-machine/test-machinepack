@@ -31,18 +31,31 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
     eachTest(testCase, function actuallyRunAndTestMachine(informTestFinished){
 
+      // Deserialize `testCase.using` (the input values to feed in to the machine)
+      var inputValues;
+      inputValues = _.reduce(testCase.using, function (memo, inputVal, inputName){
+        var valToUse;
+        try {
+          valToUse = JSON.parse(inputVal);
+        }
+        catch (e) {
+          // For backwards compatibility, tolerate values that aren't JSON-encoded.
+          valToUse = inputVal;
+        }
+        memo.push({
+          name: inputName,
+          value: valToUse
+        });
+        return memo;
+      }, []);
+
+
       // Use `runMachine` from machinepack-machines in here instead to avoid
       // unnecessary duplication of code
       Machines.runMachine({
         machinepackPath: Pack._meta.path,
         identity: testSuite.machine,
-        inputValues: _.reduce(testCase.using, function (memo, inputVal, inputName){
-          memo.push({
-            name: inputName,
-            value: inputVal
-          });
-          return memo;
-        }, [])
+        inputValues: inputValues
       }).exec({
         error: function (err){
           // Trigger `informTestFinished` function if it was provided
@@ -52,39 +65,56 @@ module.exports = function (Pack, testSuite, eachTest, done){
           // Then either way, ignore the error and continue on to the next test case.
           return next_testCase();
         },
+        cantStringifyOutput: function (whatActuallyHappened) {
+          // Report back to test engine w/ an error
+          var errMsg = util.format('Failed test #%s for machine `%s`.', '?',testSuite.machine);
+          errMsg += util.format('Output returned by machine\'s "%s" exit could not be stringified as JSON:\n',whatActuallyHappened.outcome,whatActuallyHappened.inspectedOutput);
+          var _testFailedErr = new Error(errMsg);
+          _.extend(_testFailedErr, testCase);
+          _testFailedErr.actual = whatActuallyHappened;
+
+          // Trigger `informTestFinished` function if it was provided
+          if (_.isFunction(informTestFinished)){
+            informTestFinished(_testFailedErr);
+          }
+          // Then either way, ignore the error and continue on to the next test case.
+          return next_testCase();
+        },
         success: function (whatActuallyHappened){
 
-          // {
-          //   exit: 'success',
-          //   jsonValue: '{"stuff": "things"}',
-          //   inspectedValue: '{ stuff: "things" }',
-          //   duration: 3252,
-          //   void: false
-          // }
+          // (backwards compatibility for `returns` assertion)
+          var outputAssertion = !_.isUndefined(testCase.output) ? testCase.output : testCase.returns;
+
 
           // Build test result object
           var testResultObj = {
             pass: (function _determineIfTestCasePassed(){
               var _passed = true;
 
+              // If specified, test `outcome` assertion (which exit was traversed)
               if (_.isString(testCase.outcome)) {
-                _passed = _passed && (testCase.outcome === whatActuallyHappened.exit);
+                _passed = _passed && (testCase.outcome === whatActuallyHappened.outcome);
               }
 
-              // TODO: support other assertions
+              // If specified, test JSON-encoded `output` assertion (output value returned from exit)
+              if (!_.isUndefined(outputAssertion)) {
+                // TODO: test output
+              }
+
+              // TODO: support `maxDuration` assertion
+              // TODO: support `after` assertion (custom asynchronous function)
 
               return _passed;
             })(),
           };
 
           // Save other metadata about the run
-          testResultObj.actual = {
-            result: whatActuallyHappened.jsonValue,
-            outcome: whatActuallyHappened.exit,
-            duration: whatActuallyHappened.duration
-          };
+          testResultObj.actual = whatActuallyHappened;
 
-          // Report back to test engine w/ a success
+          // Set up `returns` as an alias for `output` for backwards compatibility.
+          testResultObj.actual.returns = whatActuallyHappened.output;
+
+          // If the test passed, report back to test engine and bail out.
           if (testResultObj.pass) {
 
             // Trigger `informTestFinished` function if it was provided
@@ -95,33 +125,29 @@ module.exports = function (Pack, testSuite, eachTest, done){
             return next_testCase(null, testResultObj);
           }
 
-          // Report back to test engine w/ an error
-          var _testFailedErr = new Error();
-          _testFailedErr.message = '';
-          _testFailedErr.message = util.format('Failed test #%s for machine `%s`.', '?',testSuite.machine);
+          // Otherwise, if we're here, that means the test failed.
+          // Report back to test engine w/ a detailed error.
+          var errMsg = util.format('Failed test #%s for machine `%s`.', '?',testSuite.machine);
+          var _testFailedErr = new Error(errMsg);
+          _testFailedErr.message = errMsg;
           _.extend(_testFailedErr, testCase);
           _testFailedErr.actual = testResultObj.actual;
 
-          // Generate pretty-printed version of result
-          if (!_.isUndefined(_testFailedErr.actual.result)) {
-            _testFailedErr.actual.prettyPrintedResult = (function (){
-              var _prettyPrintedResult = testResultObj.actual.result;
-              if (_.isObject(_prettyPrintedResult) && _prettyPrintedResult instanceof Error) {
-                _prettyPrintedResult = _prettyPrintedResult.stack;
-              }
-              else {
-                _prettyPrintedResult = util.inspect(testResultObj.actual.result);
-              }
-              return _prettyPrintedResult;
-            })();
+
+          // Enhance result msg using outcome and inspectedOutput.
+          if (_.isString(testCase.outcome)) {
+            _testFailedErr.message += util.format('  Expected outcome "%s" but actually the machine triggered its "%s" exit', testCase.outcome, _testFailedErr.actual.outcome);
+            if (!_.isUndefined(testResultObj.actual.output)) {
+              _testFailedErr.message += util.format(' and returned a %s:\n %s', _.isArray(_testFailedErr.actual.output)?'array':typeof _testFailedErr.actual.output, _testFailedErr.actual.inspectedOutput);
+            }
+            else {
+              _testFailedErr.message += '.';
+            }
           }
 
-          // Enhance result msg using outcome and prettyPrintedResult.
-          if (_.isString(testCase.outcome)) {
-            _testFailedErr.message += util.format('Expected outcome "%s" but actually the machine triggered its "%s" exit', testCase.outcome, _testFailedErr.actual.outcome);
-            if (!_.isUndefined(testResultObj.actual.result)) {
-              _testFailedErr.message += util.format(' with a %s:\n %s', _.isArray(_testFailedErr.actual.result)?'array':typeof _testFailedErr.actual.result, _testFailedErr.actual.prettyPrintedResult);
-            }
+          // Enhance result msg using expected `output` and actual output.
+          if (!_.isUndefined(outputAssertion)) {
+            // TODO
           }
 
           // Trigger `informTestFinished` function if it was provided
@@ -136,13 +162,12 @@ module.exports = function (Pack, testSuite, eachTest, done){
       }); // </runMachine()>
     }); // </eachTest()>
   }, function afterAsyncMap (err, results) {
+    if (!_.isFunction(done)) {
+      return;
+    }
     if (err) {
-      if (_.isFunction(done)) {
-        return done(err);
-      }
+      return done(err);
     }
-    if (_.isFunction(done)) {
-      return done(null, results);
-    }
+    return done(null, results);
   });
 };
