@@ -41,11 +41,10 @@ module.exports = function (Pack, testSuite, eachTest, done){
           if (!inputDef) {
             throw new Error('Test specifies a value for an input which does not actually exist in the machine definition (`'+inputName+'`).');
           }
-
-          // Parse expected input value from its encoded format in our test file
+          // Decode expected input value from its encoded format in our test file
           var valToUse;
           try {
-            valToUse = JSON.parse(inputVal);
+            valToUse = rttc.decode(inputVal, rttc.infer(inputDef.example), true);
           }
           catch (e) {
             // For backwards compatibility, also tolerate values that aren't JSON-encoded.
@@ -68,6 +67,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
         // Continue to next test
         return next_testCase();
       }
+      // console.log('INPUT VALS:', inputValues);
 
 
       // Use `runMachine` from machinepack-machines in here instead to avoid
@@ -104,17 +104,35 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
           // (backwards compatibility for `returns` assertion)
           var outputAssertion = !_.isUndefined(testCase.output) ? testCase.output : testCase.returns;
+          // If expected output is specified, but expected *outcome* isn't, assume
+          // the test is referring to the success exit.
+          if (!_.isUndefined(outputAssertion) && !_.isString(testCase.outcome)) {
+            testCase.outcome = 'success';
+          }
 
-          var jsonStringifiedOutputAssertion = outputAssertion;
-          // If output assertion is not a string already, create a JSON.stringified version of it.
-          if (!_.isString(outputAssertion)) {
+          // Look up the exit definition for the expected outcome
+          var exitDef = machine.exits[testCase.outcome];
+          // and use it to infer the expected `typeSchema` in order to do a better comparison
+          // between pieces, and for use in decoding the expected output below.
+          var typeSchema;
+          try {
+            typeSchema = rttc.infer(exitDef.example);
+          }
+          catch (e) {}
+
+
+          // If it's present, now decode the `outputAssertion` for this test
+          // (the expected return value)
+          if (!_.isUndefined(outputAssertion)) {
             try {
-              jsonStringifiedOutputAssertion = JSON.stringify(outputAssertion);
+              outputAssertion = rttc.decode(outputAssertion, typeSchema, true);
             }
             catch (e) {
-              // If it can't be stringified for some reason, keep it as is.
+              // For backwards compatibility, also tolerate output assertions that aren't JSON-encoded.
             }
           }
+
+          // console.log('******',whatActuallyHappened);
 
           // Build test result object
           var testResultObj = {
@@ -130,12 +148,6 @@ module.exports = function (Pack, testSuite, eachTest, done){
             failedPostcondition: false
           };
 
-          // If expected output is specified, but expected *outcome* isn't, assume
-          // the test is referring to the success exit.
-          if (!_.isUndefined(outputAssertion) && !_.isString(testCase.outcome)) {
-            testCase.outcome = 'success';
-          }
-
           // If specified, test `outcome` assertion (which exit was traversed)
           if (_.isString(testCase.outcome)) {
             testResultObj.wrongOutcome = (testCase.outcome !== whatActuallyHappened.outcome);
@@ -143,13 +155,24 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
           // If specified, test JSON-encoded `output` assertion (output value returned from exit)
           if (!_.isUndefined(outputAssertion)) {
-            var exitDef = machine.exits[testCase.outcome];
-            var typeSchema;
+
+            // Now compare actual vs. expected output
             try {
-              typeSchema = rttc.infer(exitDef.example);
+              testResultObj.wrongOutput = ! rttc.isEqual(outputAssertion, whatActuallyHappened.output, typeSchema);
             }
-            catch (e) {}
-            testResultObj.wrongOutput = ! rttc.isEqual(jsonStringifiedOutputAssertion, whatActuallyHappened.jsonStringifiedOutput, typeSchema);
+            catch (e){
+              errMsg += util.format('Could not compare result with expected value, because rttc.isEqual threw an Error:'+e.stack);
+              var _testFailedErr = new Error(errMsg);
+              _.extend(_testFailedErr, testCase);
+              _testFailedErr.actual = whatActuallyHappened;
+
+              // Trigger `informTestFinished` function if it was provided
+              if (_.isFunction(informTestFinished)){
+                informTestFinished(_testFailedErr);
+              }
+              // Then either way, ignore the error and continue on to the next test case.
+              return next_testCase();
+            }
           }
 
           // Determine whether the test passed overall or not.
@@ -157,8 +180,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
           // Save other metadata about the run
           testResultObj.actual = whatActuallyHappened;
-
-          // Set up `returns` as an alias for `output` for backwards compatibility.
+          // (also include `returns` as an alias for `output` for backwards compatibility)
           testResultObj.actual.returns = whatActuallyHappened.output;
 
           // If the test passed, report back to test engine and bail out.
