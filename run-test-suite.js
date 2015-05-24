@@ -42,6 +42,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
             throw new Error('Test specifies a value for an input which does not actually exist in the machine definition (`'+inputName+'`).');
           }
 
+          // Parse expected input value from its encoded format in our test file
           var valToUse;
           try {
             valToUse = JSON.parse(inputVal);
@@ -55,6 +56,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
             name: inputName,
             value: valToUse
           });
+
           return memo;
         }, []);
       }
@@ -142,7 +144,12 @@ module.exports = function (Pack, testSuite, eachTest, done){
           // If specified, test JSON-encoded `output` assertion (output value returned from exit)
           if (!_.isUndefined(outputAssertion)) {
             var exitDef = machine.exits[testCase.outcome];
-            testResultObj.wrongOutput = ! rttc.isEqual(jsonStringifiedOutputAssertion, whatActuallyHappened.jsonStringifiedOutput, exitDef.example);
+            var typeSchema;
+            try {
+              typeSchema = rttc.infer(exitDef.example);
+            }
+            catch (e) {}
+            testResultObj.wrongOutput = ! rttc.isEqual(jsonStringifiedOutputAssertion, whatActuallyHappened.jsonStringifiedOutput, typeSchema);
           }
 
           // Determine whether the test passed overall or not.
