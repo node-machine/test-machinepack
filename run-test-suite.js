@@ -6,6 +6,8 @@ var util = require('util');
 var _ = require('lodash');
 var async = require('async');
 var Machines = require('machinepack-machines');
+var rttc = require('rttc');
+
 
 
 module.exports = function (Pack, testSuite, eachTest, done){
@@ -33,21 +35,37 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
       // Deserialize `testCase.using` (the input values to feed in to the machine)
       var inputValues;
-      inputValues = _.reduce(testCase.using, function (memo, inputVal, inputName){
-        var valToUse;
-        try {
-          valToUse = JSON.parse(inputVal);
+      try {
+        inputValues = _.reduce(testCase.using, function (memo, inputVal, inputName){
+          var valToUse;
+          try {
+            valToUse = JSON.parse(inputVal);
+          }
+          catch (e) {
+            // For backwards compatibility, tolerate values that aren't JSON-encoded.
+            valToUse = inputVal;
+          }
+
+          // Handle case where a value was provided for an unknown input
+          var inputDef = machine.inputs[inputName];
+          if (!inputDef) {
+            throw new Error('Test specifies a value for an input which does not actually exist in the machine definition (`'+inputName+'`).');
+          }
+          memo.push({
+            name: inputName,
+            value: valToUse
+          });
+          return memo;
+        }, []);
+      }
+      catch (e) {
+        // Trigger `informTestFinished` function if it was provided
+        if (_.isFunction(informTestFinished)){
+          informTestFinished(e);
         }
-        catch (e) {
-          // For backwards compatibility, tolerate values that aren't JSON-encoded.
-          valToUse = inputVal;
-        }
-        memo.push({
-          name: inputName,
-          value: valToUse
-        });
-        return memo;
-      }, []);
+        // Continue to next test
+        return next_testCase();
+      }
 
 
       // Use `runMachine` from machinepack-machines in here instead to avoid
@@ -99,6 +117,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
               // If specified, test JSON-encoded `output` assertion (output value returned from exit)
               if (!_.isUndefined(outputAssertion)) {
                 // TODO: test output
+                rttc.isEqual(outputAssertion, , machine.inputs);
               }
 
               // TODO: support `maxDuration` assertion

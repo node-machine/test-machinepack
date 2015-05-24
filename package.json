@@ -18,7 +18,8 @@
     "async": "^0.9.0",
     "json5": "^0.4.0",
     "lodash": "^3.1.0",
-    "machinepack-machines": "^5.0.0"
+    "machinepack-machines": "^5.0.0",
+    "rttc": "^3.2.0"
   },
   "repository": {
     "type": "git",
