@@ -117,7 +117,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
               // If specified, test JSON-encoded `output` assertion (output value returned from exit)
               if (!_.isUndefined(outputAssertion)) {
                 // TODO: test output
-                rttc.isEqual(outputAssertion, , machine.inputs);
+                // rttc.isEqual(outputAssertion, , machine.inputs);
               }
 
               // TODO: support `maxDuration` assertion
