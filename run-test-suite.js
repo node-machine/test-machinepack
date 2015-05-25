@@ -67,7 +67,6 @@ module.exports = function (Pack, testSuite, eachTest, done){
         // Continue to next test
         return next_testCase();
       }
-      // console.log('INPUT VALS:', inputValues);
 
 
       // Use `runMachine` from machinepack-machines in here instead to avoid
@@ -131,8 +130,6 @@ module.exports = function (Pack, testSuite, eachTest, done){
               // For backwards compatibility, also tolerate output assertions that aren't JSON-encoded.
             }
           }
-
-          // console.log('******',whatActuallyHappened);
 
           // Build test result object
           var testResultObj = {
