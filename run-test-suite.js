@@ -41,14 +41,14 @@ module.exports = function (Pack, testSuite, eachTest, done){
           if (!inputDef) {
             throw new Error('Test specifies a value for an input which does not actually exist in the machine definition (`'+inputName+'`).');
           }
-          // Decode expected input value from its encoded format in our test file
+          // Hydrate input value (i.e. make the functions juicy)
           var valToUse;
           try {
-            valToUse = rttc.decode(inputVal, rttc.infer(inputDef.example), true);
+            valToUse = rttc.hydrate(inputVal, rttc.infer(inputDef.example));
           }
           catch (e) {
-            // For backwards compatibility, also tolerate values that aren't JSON-encoded.
-            valToUse = inputVal;
+            // TODO: backwards compatibility..?
+            throw e;
           }
 
           memo.push({
@@ -116,20 +116,18 @@ module.exports = function (Pack, testSuite, eachTest, done){
           var typeSchema;
           try {
             typeSchema = rttc.infer(exitDef.example);
-          }
-          catch (e) {}
 
-
-          // If it's present, now decode the `outputAssertion` for this test
-          // (the expected return value)
-          if (!_.isUndefined(outputAssertion)) {
-            try {
-              outputAssertion = rttc.decode(outputAssertion, typeSchema, true);
-            }
-            catch (e) {
-              // For backwards compatibility, also tolerate output assertions that aren't JSON-encoded.
+            // If it's present, now hydrate the `outputAssertion` for this test
+            // (the expected return value) in case it contains any stringified lamda functios
+            if (!_.isUndefined(outputAssertion)) {
+              outputAssertion = rttc.dehydrate(outputAssertion, typeSchema);
             }
           }
+          catch (e) {
+            // TODO: backwards compatibility..?
+            throw e;
+          }
+
 
           // Build test result object
           var testResultObj = {
