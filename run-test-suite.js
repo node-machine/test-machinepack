@@ -51,10 +51,11 @@ module.exports = function (Pack, testSuite, eachTest, done){
             throw e;
           }
 
-          // If configured input value is a string, but the machine is NOT expecting
-          // a string specifically, then attempt to parse.
-          var isExpectingString = (rttc.infer(inputDef.example) === 'string');
-          if (_.isString(valToUse) && !isExpectingString) {
+          // If configured input value is a string, but the machine is expecting
+          // a JSON value, then attempt to parse.
+          var typeSchema = rttc.infer(inputDef.example);
+          var isExpectingJson = (typeSchema !== 'string' && typeSchema !== 'number' && typeSchema !== 'boolean' && typeSchema !== 'lamda');
+          if (_.isString(valToUse) && isExpectingJson) {
             try {
               valToUse = JSON.parse(valToUse);
             }
@@ -134,11 +135,10 @@ module.exports = function (Pack, testSuite, eachTest, done){
             if (!_.isUndefined(outputAssertion)) {
               outputAssertion = rttc.dehydrate(outputAssertion, typeSchema);
 
-              // If output assertion is a string, but the machine is NOT expecting
-              // a string specifically, then attempt to parse the output assertion
-              // before performing the check.
-              var isExpectingString = (typeSchema === 'string');
-              if (_.isString(outputAssertion) && !isExpectingString) {
+              // If output assertion is a string, but the machine is expecting JSON
+              // then attempt to parse the output assertion before performing the check.
+              var isExpectingJson = (typeSchema !== 'string' && typeSchema !== 'number' && typeSchema !== 'boolean' && typeSchema !== 'lamda');
+              if (_.isString(outputAssertion) && isExpectingJson) {
                 try {
                   outputAssertion = JSON.parse(outputAssertion);
                 }
