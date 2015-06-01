@@ -51,6 +51,18 @@ module.exports = function (Pack, testSuite, eachTest, done){
             throw e;
           }
 
+          // If configured input value is a string, but the machine is NOT expecting
+          // a string specifically, then attempt to parse.
+          var isExpectingString = (rttc.infer(inputDef.example) === 'string');
+          if (_.isString(valToUse) && !isExpectingString) {
+            try {
+              valToUse = JSON.parse(valToUse);
+            }
+            catch (e) {
+              // If parsing fails, then just pass the string straight through.
+            }
+          }
+
           memo.push({
             name: inputName,
             value: valToUse
@@ -121,6 +133,20 @@ module.exports = function (Pack, testSuite, eachTest, done){
             // (the expected return value) in case it contains any stringified lamda functios
             if (!_.isUndefined(outputAssertion)) {
               outputAssertion = rttc.dehydrate(outputAssertion, typeSchema);
+
+              // If output assertion is a string, but the machine is NOT expecting
+              // a string specifically, then attempt to parse the output assertion
+              // before performing the check.
+              var isExpectingString = (typeSchema === 'string');
+              if (_.isString(outputAssertion) && !isExpectingString) {
+                try {
+                  outputAssertion = JSON.parse(outputAssertion);
+                }
+                catch (e) {
+                  // If parsing fails, then just pass the original output assertion
+                  // straight through.
+                }
+              }
             }
           }
           catch (e) {
