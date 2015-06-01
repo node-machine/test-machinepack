@@ -147,6 +147,8 @@ module.exports = function (Pack, testSuite, eachTest, done){
                   // straight through.
                 }
               }
+              // console.log('-->',whatActuallyHappened.output, '('+typeof whatActuallyHappened.output+')');
+              // console.log('==> should be:',outputAssertion, '('+typeof outputAssertion+')');
             }
           }
           catch (e) {
