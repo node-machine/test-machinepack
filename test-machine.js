@@ -278,7 +278,12 @@ var testMachine = {
             });
           }
           catch (e) {
-            return next(e);
+            failureReport.failedPostConditions.push({
+              index: i,
+              label: inputs.postConditions[i].label,
+              error: e
+            });
+            return next();
           }
 
         }, function (err) {
