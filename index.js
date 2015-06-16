@@ -3,10 +3,14 @@
  */
 
 var path = require('path');
+var testMachine = require('./test-machine');
 
 
 // For programmatic use:
 module.exports = {
+
+  // To programmatically access the `test-machine` helper, use:
+  testMachine: testMachine,
 
   // To programmatically call the stub/default/base driver:
   runTestsWithStubDriver: function (pathToMachinepackDir){
