@@ -1,7 +1,7 @@
 {
   "name": "test-machinepack",
   "author": "Mike McNeil <@mikermcneil>",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Raw test runner for machinepacks (also includes a simple stub test driver)",
   "keywords": [
     "test-machine",
