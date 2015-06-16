@@ -278,10 +278,23 @@ var testMachine = {
             });
           }
           catch (e) {
+            var err = e;
+            var actualOutputMsg = '\n\nActual output:\n'+util.inspect(whatActuallyHappened.output, false, null);
+            if (_.isError(err)) {
+              err.message += actualOutputMsg;
+              err.stack += actualOutputMsg;
+            }
+            else if (_.isString(err)) {
+              err += actualOutputMsg;
+              err = new Error(err);
+            }
+            else {
+              err = new Error('Post-condition test failed- returned error data:\n'+util.inspect(err, false, null)+actualOutputMsg);
+            }
             failureReport.failedPostConditions.push({
               index: i,
               label: inputs.postConditions[i].label,
-              error: e
+              error: err
             });
             return next();
           }
