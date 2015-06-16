@@ -249,33 +249,38 @@ var testMachine = {
 
           // Run post-condition function
           // console.log('about to test post condition #'+i+' :: ', util.inspect(inputs.postConditions[i], false, null));
-          inputs.postConditions[i].fn(whatActuallyHappened.output, function (err) {
-            // If it provided a truthy `err`, then this is a failure-
-            // so track the array index.
-            if (err) {
-              var actualOutputMsg = '\n\nActual output:\n'+util.inspect(whatActuallyHappened.output, false, null);
-              if (_.isError(err)) {
-                err.message += actualOutputMsg;
-                err.stack += actualOutputMsg;
-              }
-              else if (_.isString(err)) {
-                err += actualOutputMsg;
-                err = new Error(err);
-              }
-              else {
-                err = new Error('Post-condition test failed- returned error data:\n'+util.inspect(err, false, null)+actualOutputMsg);
-              }
+          try {
+            // TODO: provide some kind of configurable timeout for post-condition functions
+            inputs.postConditions[i].fn(whatActuallyHappened.output, function (err) {
+              // If it provided a truthy `err`, then this is a failure-
+              // so track the array index.
+              if (err) {
+                var actualOutputMsg = '\n\nActual output:\n'+util.inspect(whatActuallyHappened.output, false, null);
+                if (_.isError(err)) {
+                  err.message += actualOutputMsg;
+                  err.stack += actualOutputMsg;
+                }
+                else if (_.isString(err)) {
+                  err += actualOutputMsg;
+                  err = new Error(err);
+                }
+                else {
+                  err = new Error('Post-condition test failed- returned error data:\n'+util.inspect(err, false, null)+actualOutputMsg);
+                }
 
-              failureReport.failedPostConditions.push({
-                index: i,
-                label: inputs.postConditions[i].label,
-                error: err
-              });
-            }
-            return next();
-          });
+                failureReport.failedPostConditions.push({
+                  index: i,
+                  label: inputs.postConditions[i].label,
+                  error: err
+                });
+              }
+              return next();
+            });
+          }
+          catch (e) {
+            return next(e);
+          }
 
-          // TODO: provide some kind of configurable timeout for post-condition functions
         }, function (err) {
           if (err) {
             return exits.error(err);
