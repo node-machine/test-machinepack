@@ -255,7 +255,13 @@ var testMachine = {
               // If it provided a truthy `err`, then this is a failure-
               // so track the array index.
               if (err) {
-                var actualOutputMsg = '\n\nActual output:\n'+util.inspect(whatActuallyHappened.output, false, null);
+                var actualOutputMsg = '\n\n';
+                if (_.isError(whatActuallyHappened.output)) {
+                  actualOutputMsg +='Actual output was an error:\n'+whatActuallyHappened.output.stack;
+                }
+                else {
+                  actualOutputMsg = 'Actual output:\n'+util.inspect(whatActuallyHappened.output, false, null);
+                }
                 if (_.isError(err)) {
                   err.message += actualOutputMsg;
                   err.stack += actualOutputMsg;
@@ -279,7 +285,13 @@ var testMachine = {
           }
           catch (e) {
             var err = e;
-            var actualOutputMsg = '\n\nActual output:\n'+util.inspect(whatActuallyHappened.output, false, null);
+            var actualOutputMsg = '\n\n';
+            if (_.isError(whatActuallyHappened.output)) {
+              actualOutputMsg +='Actual output was an error:\n'+whatActuallyHappened.output.stack;
+            }
+            else {
+              actualOutputMsg = 'Actual output:\n'+util.inspect(whatActuallyHappened.output, false, null);
+            }
             if (_.isError(err)) {
               err.message += actualOutputMsg;
               err.stack += actualOutputMsg;
