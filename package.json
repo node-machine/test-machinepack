@@ -19,7 +19,7 @@
     "json5": "^0.4.0",
     "lodash": "^3.9.1",
     "machine": "^10.0.0",
-    "machinepack-machines": "^5.0.0",
+    "machinepack-machines": "^6.0.0",
     "rttc": "^7.0.0"
   },
   "repository": {

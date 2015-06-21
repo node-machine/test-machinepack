@@ -81,12 +81,9 @@ module.exports = function (Pack, testSuite, eachTest, done){
         return next_testCase();
       }
 
-
-      // Use `runMachine` from machinepack-machines in here instead to avoid
-      // unnecessary duplication of code
-      Machines.runMachine({
-        machinepackPath: Pack._meta.path,
-        identity: testSuite.machine,
+      // Now test the machine.
+      Machines.runInstantiatedMachine({
+        machineInstance: machine,
         inputValues: inputValues
       }).exec({
         error: function (err){
