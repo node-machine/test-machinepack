@@ -225,7 +225,7 @@ var testMachine = {
 
           // Now compare actual vs. expected output
           try {
-            failureReport.wrongOutput = !rttc.isEqual(outputAssertion, whatActuallyHappened.output);
+            failureReport.wrongOutput = !rttc.isEqual(outputAssertion, whatActuallyHappened.output, typeSchema);
           }
           catch (e){
             var _testFailedErr = new Error(util.format('Could not compare result with expected value, because rttc.isEqual threw an Error:'+e.stack));

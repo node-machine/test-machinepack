@@ -181,10 +181,12 @@ module.exports = function (Pack, testSuite, eachTest, done){
           if (!_.isUndefined(outputAssertion)) {
 
             // Now compare actual vs. expected output
+            // console.log('checking using type schema:',typeSchema);
             try {
-              testResultObj.wrongOutput = ! rttc.isEqual(outputAssertion, whatActuallyHappened.output);
+              testResultObj.wrongOutput = ! rttc.isEqual(outputAssertion, whatActuallyHappened.output, typeSchema);
             }
             catch (e){
+              // console.log('* * * *',e.stack);
               errMsg += util.format('Could not compare result with expected value, because rttc.isEqual threw an Error:'+e.stack);
               var _testFailedErr = new Error(errMsg);
               _.extend(_testFailedErr, testCase);
