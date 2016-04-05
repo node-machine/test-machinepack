@@ -16,8 +16,9 @@ module.exports = function (Pack, testSuite, eachTest, done){
     throw new Error(util.format('Unrecognized machine: `%s`', testSuite.machine));
   }
 
-
+  var i = 0;
   async.map(testSuite.expectations, function eachTestCase(testCase, next_testCase){
+    i++;
 
     // If marked as `todo`, defer this test
     if (testCase.todo){
@@ -41,10 +42,14 @@ module.exports = function (Pack, testSuite, eachTest, done){
           if (!inputDef) {
             throw new Error('Test specifies a value for an input which does not actually exist in the machine definition (`'+inputName+'`).');
           }
+
+          // Infer the type schema for the input
+          var typeSchema = rttc.infer(inputDef.example);
+
           // Hydrate input value (i.e. make the functions juicy)
           var valToUse;
           try {
-            valToUse = rttc.hydrate(inputVal, rttc.infer(inputDef.example));
+            valToUse = rttc.hydrate(inputVal, typeSchema);
           }
           catch (e) {
             // TODO: backwards compatibility..?
@@ -52,8 +57,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
           }
 
           // If configured input value is a string, but the machine is expecting
-          // a JSON value, then attempt to parse.
-          var typeSchema = rttc.infer(inputDef.example);
+          // a JSON value, dictionary, or array, then attempt to parse.
           var isExpectingJson = (typeSchema !== 'string' && typeSchema !== 'number' && typeSchema !== 'boolean' && typeSchema !== 'lamda');
           if (_.isString(valToUse) && isExpectingJson) {
             try {
@@ -96,7 +100,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
         },
         cantStringifyOutput: function (whatActuallyHappened) {
           // Report back to test engine w/ an error
-          var errMsg = util.format('Failed test #%s for machine `%s`.', '?',testSuite.machine);
+          var errMsg = util.format('Failed test #%s for machine `%s`.', '?',i, testSuite.machine);
           errMsg += util.format('Output returned by machine\'s "%s" exit could not be stringified as JSON:\n',whatActuallyHappened.outcome,whatActuallyHappened.inspectedOutput);
           var _testFailedErr = new Error(errMsg);
           _.extend(_testFailedErr, testCase);
@@ -216,7 +220,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
           // Otherwise, if we're here, that means the test failed.
           // Report back to test engine w/ a detailed error.
-          var errMsg = util.format('Failed test #%s for machine `%s`.', '?',testSuite.machine);
+          var errMsg = util.format('Failed test #%s for machine `%s`.', '?',i, testSuite.machine);
           var _testFailedErr = new Error(errMsg);
           _testFailedErr.message = errMsg;
           _.extend(_testFailedErr, testCase);
