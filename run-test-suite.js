@@ -182,7 +182,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
             // Now compare actual vs. expected output
             try {
-              testResultObj.wrongOutput = ! rttc.isEqual(outputAssertion, whatActuallyHappened.output, typeSchema);
+              testResultObj.wrongOutput = ! rttc.isEqual(outputAssertion, whatActuallyHappened.output);
             }
             catch (e){
               errMsg += util.format('Could not compare result with expected value, because rttc.isEqual threw an Error:'+e.stack);
