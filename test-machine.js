@@ -225,10 +225,20 @@ var testMachine = {
 
           // Now compare actual vs. expected output
           try {
-            failureReport.wrongOutput = !rttc.isEqual(outputAssertion, whatActuallyHappened.output, typeSchema);
+            // Look up the exit definition for the expected outcome
+            var exitDef = machineInstance.exits[whatActuallyHappened.outcome];
+            // and use it to infer the expected `typeSchema` in order to do a
+            // better comparison with isEqual().
+            if (_.isUndefined(exitDef.example)) {
+              failureReport.wrongOutput = !rttc.isEqual(outputAssertion, whatActuallyHappened.output);
+            }
+            else {
+              var typeSchema = rttc.infer(exitDef.example);
+              failureReport.wrongOutput = !rttc.isEqual(outputAssertion, whatActuallyHappened.output, typeSchema);
+            }
           }
           catch (e){
-            var _testFailedErr = new Error(util.format('Could not compare result with expected value, because rttc.isEqual threw an Error:'+e.stack));
+            var _testFailedErr = new Error(util.format('Could not compare result with expected value using rttc.isEqual(), because an Error was encountered:'+e.stack));
             _.extend(_testFailedErr, {
               actual: whatActuallyHappened
             });
