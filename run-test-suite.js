@@ -100,7 +100,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
         },
         cantStringifyOutput: function (whatActuallyHappened) {
           // Report back to test engine w/ an error
-          var errMsg = util.format('Failed test #%s for machine `%s`.', '?',i, testSuite.machine);
+          var errMsg = util.format('Failed test #%s for machine `%s`.', i, testSuite.machine);
           errMsg += util.format('Output returned by machine\'s "%s" exit could not be stringified as JSON:\n',whatActuallyHappened.outcome,whatActuallyHappened.inspectedOutput);
           var _testFailedErr = new Error(errMsg);
           _.extend(_testFailedErr, testCase);
@@ -222,7 +222,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
           // Otherwise, if we're here, that means the test failed.
           // Report back to test engine w/ a detailed error.
-          var errMsg = util.format('Failed test #%s for machine `%s`.', '?',i, testSuite.machine);
+          var errMsg = util.format('Failed test #%s for machine `%s`.',i, testSuite.machine);
           var _testFailedErr = new Error(errMsg);
           _testFailedErr.message = errMsg;
           _.extend(_testFailedErr, testCase);
