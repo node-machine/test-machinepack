@@ -124,6 +124,8 @@ module.exports = require('machine').build({
     var async = require('async');
     var Machines = require('machinepack-machines');
     var rttc = require('rttc');
+    var JsonDiffer = require('json-diff');
+
 
     if (_.isArray(inputs.using) || !_.isObject(inputs.using)) {
       return exits.error('Invalid input value for `using`.  Should be a dictionary of input values.');
@@ -370,7 +372,28 @@ module.exports = require('machine').build({
 
           // Enhance result msg using expected `output` and actual output.
           if (failureReport.wrongOutput) {
-            failureReport.message += util.format('  Expected output was: `%s` (a %s) -- but actually the machine returned: `%s` (a %s)', util.inspect(outputAssertion, false, null), rttc.getDisplayType(outputAssertion), util.inspect(whatActuallyHappened.output, false, null), rttc.getDisplayType(failureReport.actual.output));
+            // Showing full expected output AND actual output can get really overwhelming sometimes.
+            // So we check how big this stuff is before showing that.
+            //
+            // If the expected output AND actual output are both objects of some kind (could be arrays
+            // too) then try to compute the JSON diff and use that.
+            var diffStr;
+            if (!_.isObject(failureReport.actual.output) || !_.isObject(outputAssertion)){
+              try {
+                diffStr = JsonDiffer.diffString([{x:2, y:3}], {y: 3, x:4});
+              } catch (e) { /*ignore errors here */ }
+            }
+            if (diffStr) {
+              failureReport.message += util.format(
+              '  Expected output was a %s -- but actually the machine returned a %s. (diff below)\n'+
+              '  Diff:', rttc.getDisplayType(outputAssertion), rttc.getDisplayType(failureReport.actual.output), diffStr);
+            }
+            // If that doesn't work, or if either the expected or actual output is a non-object,
+            // then just show the normal expected vs. actual message:
+            else {
+              failureReport.message += util.format('  Expected output was: `%s` (a %s) -- but actually the machine returned: `%s` (a %s)', util.inspect(outputAssertion, false, null), rttc.getDisplayType(outputAssertion), util.inspect(whatActuallyHappened.output, false, null), rttc.getDisplayType(failureReport.actual.output));
+            }
+
           }
 
           if (failureReport.tookTooLong) {
