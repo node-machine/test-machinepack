@@ -1,6 +1,4 @@
-// TODO: pull this into mp-machines
-
-var testMachine = {
+module.exports = require('machine').build({
 
   identity: 'test-machine',
 
@@ -376,7 +374,4 @@ var testMachine = {
   }
 
 
-};
-
-var Machine = require('machine');
-module.exports = Machine.build(testMachine);
+});
