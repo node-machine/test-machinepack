@@ -52,18 +52,28 @@ module.exports = require('machine').build({
 
     cantStringifyOutput: {
       description: 'The return value could not be stringified into JSON - perhaps it contains circular references?',
-      example: {
-        message: 'Output returned by the `finglebär` machine\'s "foobar" exit could not be stringified...etc',
-        outcome: 'success',
-        output: '===',
-        inspectedOutput: '{ stuff: "things" }',
-        duration: 2948
-      }
+      extendedDescription:
+      'Note that we use the `===` exemplar here.  This is necessary because it is the simplest '+
+      'way to represent `output: undefined`.  Even if we set the `output` facet to `===`, since '+
+      'the base value for the ref type is `null` as of rttc@9.3.0, that wouldn\'t work either.',
+      example: '===',
+      // {
+      //   message: 'Output returned by the `finglebär` machine\'s "foobar" exit could not be stringified...etc',
+      //   outcome: 'success',
+      //   output: '===?', (but could also be undefined)
+      //   inspectedOutput: '{ stuff: "things" }',
+      //   duration: 2948
+      // }
     },
 
     failed: {
       description: 'The test failed because the result was not the expected output and/or the expected outcome.',
-      variableName: 'failureReport',
+      outputFriendlyName: 'Failure report',
+      extendedDescription:
+      'Note that we use the `===` exemplar for `actual` here.  This is necessary because it is '+
+      'the simplest way to represent `actual.output === undefined`.  Even if we set the `output` '+
+      'facet to `===`, since the base value for the ref type is `null` as of rttc@9.3.0, that '+
+      'wouldn\'t work either.',
       example: {
         message: 'Expected outcome was "success" but actually the machine triggered its "error" exit.',
         wrongOutcome: false,
@@ -74,24 +84,31 @@ module.exports = require('machine').build({
           label: 'should result in a dictionary of some kind',
           error: '==='
         }],
-        actual: {
-          outcome: 'success',
-          output: '===',
-          inspectedOutput: '{ stuff: "things" }',
-          duration: 2948
-        }
+        actual: '===',
+        // {
+        //   outcome: 'success',
+        //   output: '===?' (but also could be `undefined`),
+        //   inspectedOutput: '{ stuff: "things" }',
+        //   duration: 2948
+        // }
       }
     },
 
     success: {
       description: 'The test was successful.',
-      variableName: 'whatActuallyHappened',
-      example: {
-        outcome: 'success',
-        output: '===',
-        inspectedOutput: '{ stuff: "things" }',
-        duration: 2948
-      }
+      outputFriendlyName: 'What actually happened',
+      outputDescription: 'A dictionary reporting the actual outcome, output, duration, etc.',
+      extendedDescription:
+      'Note that we use the `===` exemplar here.  This is necessary because it is the simplest '+
+      'way to represent `output: undefined`.  Even if we set the `output` facet to `===`, since '+
+      'the base value for the ref type is `null` as of rttc@9.3.0, that wouldn\'t work either.',
+      example: '===',
+      // {
+      //   outcome: 'success',
+      //   output: '===?' (but also could be `undefined`),
+      //   inspectedOutput: '{ stuff: "things" }',
+      //   duration: 2948
+      // }
     }
 
   },
