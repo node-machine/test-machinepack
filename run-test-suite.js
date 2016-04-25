@@ -5,8 +5,10 @@
 var util = require('util');
 var _ = require('lodash');
 var async = require('async');
+var JsonDiffer = require('json-diff');
 var Machines = require('machinepack-machines');
 var rttc = require('rttc');
+var chalk = require('chalk');
 
 
 module.exports = function (Pack, testSuite, eachTest, done){
@@ -166,9 +168,12 @@ module.exports = function (Pack, testSuite, eachTest, done){
             wrongOutput: false,
 
             // TODO: support `maxDuration` assertion
+            // (but this should be accomplished by just calling testMachine()-- it's already implemented there)
             tookTooLong: false,
 
-            // TODO: support `after` assertion (custom asynchronous function)
+            // We could eventually support `postConditions` here
+            // (maybe relevant for json5 files that can support functions)
+            // (but if we do it, this should be accomplished by just calling testMachine()-- it's already implemented there.)
             failedPostcondition: false
           };
 
@@ -242,7 +247,29 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
           // Enhance result msg using expected `output` and actual output.
           if (testResultObj.wrongOutput) {
-            _testFailedErr.message += util.format('  Expected output was: `%s` (a %s) -- but actually the machine returned: `%s` (a %s)', util.inspect(outputAssertion, false, null), rttc.getDisplayType(outputAssertion), util.inspect(_testFailedErr.actual.output, false, null), rttc.getDisplayType(_testFailedErr.actual.output));
+
+            // Showing full expected output AND actual output can get really overwhelming sometimes.
+            // So we check how big this stuff is before showing that.
+            //
+            // If the expected output AND actual output are both objects of some kind (could be arrays
+            // too) then try to compute the JSON diff and use that.
+            var diffStr;
+            if (_.isObject(testResultObj.actual.output) && _.isObject(outputAssertion)){
+              try {
+                diffStr = JsonDiffer.diffString(testResultObj.actual.output, outputAssertion);
+              } catch (e) { /*ignore errors here-- we just use the more basic output if that happens */ }
+            }
+            if (diffStr) {
+              _testFailedErr.message += util.format(
+              '  Expected output was a %s -- but actually the machine returned a %s. (diff below...)\n'+
+              chalk.reset('  Diff:'), rttc.getDisplayType(outputAssertion), rttc.getDisplayType(testResultObj.actual.output), diffStr);
+            }
+            // If that doesn't work, or if either the expected or actual output is a non-object,
+            // then just show the normal expected vs. actual message:
+            else {
+              _testFailedErr.message += util.format('  Expected output was: `%s` (a %s) -- but actually the machine returned: `%s` (a %s)', util.inspect(outputAssertion, false, null), rttc.getDisplayType(outputAssertion), util.inspect(whatActuallyHappened.output, false, null), rttc.getDisplayType(testResultObj.actual.output));
+            }
+
           }
 
           // Trigger `informTestFinished` function if it was provided

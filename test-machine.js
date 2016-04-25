@@ -125,6 +125,7 @@ module.exports = require('machine').build({
     var Machines = require('machinepack-machines');
     var rttc = require('rttc');
     var JsonDiffer = require('json-diff');
+    var chalk = require('chalk');
 
 
     if (_.isArray(inputs.using) || !_.isObject(inputs.using)) {
@@ -378,15 +379,15 @@ module.exports = require('machine').build({
             // If the expected output AND actual output are both objects of some kind (could be arrays
             // too) then try to compute the JSON diff and use that.
             var diffStr;
-            if (!_.isObject(failureReport.actual.output) || !_.isObject(outputAssertion)){
+            if (_.isObject(failureReport.actual.output) && _.isObject(outputAssertion)){
               try {
-                diffStr = JsonDiffer.diffString([{x:2, y:3}], {y: 3, x:4});
-              } catch (e) { /*ignore errors here */ }
+                diffStr = JsonDiffer.diffString(failureReport.actual.output, outputAssertion);
+              } catch (e) { /*ignore errors here-- we just use the more basic output if that happens */ }
             }
             if (diffStr) {
               failureReport.message += util.format(
-              '  Expected output was a %s -- but actually the machine returned a %s. (diff below)\n'+
-              '  Diff:', rttc.getDisplayType(outputAssertion), rttc.getDisplayType(failureReport.actual.output), diffStr);
+              '  Expected output was a %s -- but actually the machine returned a %s. (diff below...)\n'+
+              chalk.reset('  Diff:'), rttc.getDisplayType(outputAssertion), rttc.getDisplayType(failureReport.actual.output), diffStr);
             }
             // If that doesn't work, or if either the expected or actual output is a non-object,
             // then just show the normal expected vs. actual message:
