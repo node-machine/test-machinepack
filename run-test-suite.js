@@ -127,6 +127,9 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
           // Look up the exit definition for the expected outcome
           var exitDef = machine.exits[testCase.outcome];
+          if (!exitDef) {
+            throw new Error('Consistency violation: The exit (`'+testCase.outcome+'`) that this test expects to be triggered is not actually defined in this machine (`'+testSuite.machine+'`)');
+          }
           // and use it to infer the expected `typeSchema` in order to do a better comparison
           // between pieces, and for use in decoding the expected output below.
           var typeSchema;
