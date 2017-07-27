@@ -122,10 +122,10 @@ module.exports = require('machine').build({
     var util = require('util');
     var _ = require('@sailshq/lodash');
     var async = require('async');
-    var Machines = require('machinepack-machines');
     var rttc = require('rttc');
     var JsonDiffer = require('json-diff');
     var chalk = require('chalk');
+    var runInstantiatedMachine = require('./run-instantiated-machine');
 
 
     if (_.isArray(inputs.using) || !_.isObject(inputs.using)) {
@@ -190,10 +190,10 @@ module.exports = require('machine').build({
 
     // Use `runInstantiatedMachine` from machinepack-machines in here
     // to avoid unnecessary duplication of code.
-    Machines.runInstantiatedMachine({
+    runInstantiatedMachine({
       machineInstance: machineInstance,
       inputValues: inputValues
-    }).exec({
+    }).switch({
       error: function (err){
         return exits.error(err);
       },

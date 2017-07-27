@@ -6,9 +6,9 @@ var util = require('util');
 var _ = require('@sailshq/lodash');
 var async = require('async');
 var JsonDiffer = require('json-diff');
-var Machines = require('machinepack-machines');
 var rttc = require('rttc');
 var chalk = require('chalk');
+var runInstantiatedMachine = require('./run-instantiated-machine');
 
 
 module.exports = function (Pack, testSuite, eachTest, done){
@@ -113,10 +113,10 @@ module.exports = function (Pack, testSuite, eachTest, done){
       }
 
       // Now test the machine.
-      Machines.runInstantiatedMachine({
+      runInstantiatedMachine({
         machineInstance: machine,
         inputValues: inputValues
-      }).exec({
+      }).switch({
         error: function (err){
           // Trigger `informTestFinished` function if it was provided
           if (_.isFunction(informTestFinished)){
