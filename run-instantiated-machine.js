@@ -77,7 +77,7 @@ module.exports = require('machine').build({
 
     // Determine whether this machine instance is from prior than machine@v15.0.0
     var isLegacyMachineInstance;
-    if (!inputs.machineInstance.switch) {
+    if (!inputs.machineInstance.getDef) {
       isLegacyMachineInstance = true;
     }
 
