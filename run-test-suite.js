@@ -31,10 +31,13 @@ module.exports = function (Pack, testSuite, eachTest, done){
     throw new Error('Unrecognized machine: `'+testSuite.machine+'` in pack: '+util.inspect(Pack));
   }
 
-  // Handle machine runner >= v15.0.0
+  // Handle machine runner >= v15.0.0 by making sure the wet machine has all
+  // the exciting stuff from the machine def.  This is more or less a hack
+  // designed to allow compatiblity w/ the old version of mp-machines we're using.
   var machineDef;
   if (!machine.inputs && machine.getDef()) {
     machineDef = machine.getDef();
+    machine = _.extend(machine, machineDef);
   }
   else {
     machineDef = machine;
