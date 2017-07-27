@@ -82,7 +82,7 @@ module.exports = require('machine').build({
     }
 
     // Configure machine with input values
-    var machineInstance = inputs.machineInstance((function (){
+    var liveDeferred = inputs.machineInstance((function (){
       // Compress all the provided input values into the simple object
       // format you would normally use when configuring a machine.
       return _.reduce(inputs.argins, function (memo, configuredInput) {
@@ -122,10 +122,10 @@ module.exports = require('machine').build({
     var callbacks = {};
     var exitDefs;
     if (isLegacyMachineInstance) {
-      exitDefs = machineInstance.exits;
+      exitDefs = liveDeferred.exits;
     }
     else {
-      exitDefs = machineInstance.getDef().exits;
+      exitDefs = inputs.machineInstance.getDef().exits;
     }
     _.each(exitDefs, function (exitDef, exitName){
       callbacks[exitName] = function (result){
@@ -146,10 +146,10 @@ module.exports = require('machine').build({
 
     // Now start executing the machine
     if (isLegacyMachineInstance) {
-      machineInstance.exec(callbacks);
+      liveDeferred.exec(callbacks);
     }
     else {
-      machineInstance.switch(callbacks);
+      liveDeferred.switch(callbacks);
     }
 
     // And set up a `whilst` loop that checks to see if the machine has
@@ -183,7 +183,7 @@ module.exports = require('machine').build({
             }
             return util.inspect(rawReturnValue, false, null);
           })(),
-          duration: isLegacyMachineInstance ? machineInstance._msElapsed : (Date.now() - startedAt)
+          duration: isLegacyMachineInstance ? liveDeferred._msElapsed : (Date.now() - startedAt)
         };
 
         // Attempt to stringify return value
