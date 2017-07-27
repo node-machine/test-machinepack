@@ -26,8 +26,18 @@ module.exports = function (Pack, testSuite, eachTest, done){
       throw new Error('Invalid machine:\n\n--\n'+util.inspect(wetMachine)+'\n--\n^^It has neither a `getDef()` method nor an `identity`!');
     }
   });
+
   if (!_.isFunction(machine)) {
     throw new Error('Unrecognized machine: `'+testSuite.machine+'` in pack: '+util.inspect(Pack));
+  }
+
+  // Handle machine runner >= v15.0.0
+  var machineDef;
+  if (!machine.inputs && machine.getDef()) {
+    machineDef = machine.getDef();
+  }
+  else {
+    machineDef = machine;
   }
 
   var i = 0;
@@ -52,7 +62,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
       try {
         inputValues = _.reduce(testCase.using, function (memo, inputVal, inputName){
           // Handle case where a value was provided for an unknown input
-          var inputDef = machine.inputs[inputName];
+          var inputDef = machineDef.inputs[inputName];
           if (!inputDef) {
             throw new Error('Test specifies a value for an input which does not actually exist in the machine definition (`'+inputName+'`).');
           }
@@ -138,7 +148,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
           }
 
           // Look up the exit definition for the expected outcome
-          var exitDef = machine.exits[testCase.outcome];
+          var exitDef = machineDef.exits[testCase.outcome];
           if (!exitDef) {
             throw new Error('Consistency violation: The exit (`'+testCase.outcome+'`) that this test expects to be triggered is not actually defined in this machine (`'+testSuite.machine+'`)');
           }
