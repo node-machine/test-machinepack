@@ -13,8 +13,20 @@ var chalk = require('chalk');
 
 module.exports = function (Pack, testSuite, eachTest, done){
 
-  var machine = Pack[testSuite.machine];
-  if (!machine) {
+  var identity = testSuite.machine;
+
+  var machine = _.find(Pack, function (wetMachine){
+    if (wetMachine.getDef) {
+      return wetMachine.getDef().identity === identity;
+    }
+    else if (wetMachine.identity) {
+      return wetMachine.identity === identity;
+    }
+    else {
+      throw new Error('Invalid machine:\n\n--\n'+util.inspect(wetMachine)+'\n--\n^^It has neither a `getDef()` method nor an `identity`!');
+    }
+  });
+  if (!_.isFunction(machine)) {
     throw new Error('Unrecognized machine: `'+testSuite.machine+'` in pack: '+util.inspect(Pack));
   }
 
