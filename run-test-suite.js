@@ -13,8 +13,8 @@ var chalk = require('chalk');
 
 module.exports = function (Pack, testSuite, eachTest, done){
 
-  var machine = _.find(Pack, {identity: testSuite.machine});
-  if (!machine) {
+  var machine = Pack[testSuite.machine];
+  if (!_.isFunction(machine)) {
     throw new Error(util.format('Unrecognized machine: `%s`', testSuite.machine));
   }
 
