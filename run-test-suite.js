@@ -115,7 +115,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
       // Now test the machine.
       runInstantiatedMachine({
         machineInstance: machine,
-        inputValues: inputValues
+        argins: inputValues
       }).switch({
         error: function (err){
           // Trigger `informTestFinished` function if it was provided

@@ -192,7 +192,7 @@ module.exports = require('machine').build({
     // to avoid unnecessary duplication of code.
     runInstantiatedMachine({
       machineInstance: machineInstance,
-      inputValues: inputValues
+      argins: inputValues
     }).switch({
       error: function (err){
         return exits.error(err);
