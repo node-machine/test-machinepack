@@ -2,12 +2,12 @@
  * Module depenencies
  */
 
+var fs = require('fs');
+var path = require('path');
 var util = require('util');
 var _ = require('lodash');
 var async = require('async');
-var path = require('path');
-//replace's nodejs' require to support requiring of .json5 files
-require('json5/lib/require');
+require('json5/lib/require');//<<replace's nodejs' require to support requiring of .json5 files
 
 
 module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
@@ -16,7 +16,14 @@ module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
   var mainPath = path.resolve(mpPath);
   // var mainPath = path.resolve(mpPath, 'index.js');
   var packageJsonPath = path.resolve(mpPath, 'package.json');
-  var testsPath = path.resolve(mpPath, 'tests');
+
+  // Determine suitable path to tests
+  // (we try `tests/` and `test/`)
+  var testsPath;
+  testsPath = path.resolve(mpPath, 'tests');
+  if (!fs.existsSync(testsPath)) {
+    testsPath = path.resolve(mpPath, 'test')
+  }//ﬁ
 
   // Load pack
   var Pack = require(mainPath);
