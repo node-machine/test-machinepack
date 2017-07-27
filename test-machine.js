@@ -120,7 +120,7 @@ module.exports = require('machine').build({
      */
 
     var util = require('util');
-    var _ = require('lodash');
+    var _ = require('@sailshq/lodash');
     var async = require('async');
     var Machines = require('machinepack-machines');
     var rttc = require('rttc');

@@ -75,3 +75,5 @@ See https://github.com/mikermcneil/test-machinepack-mocha for an example, and ch
 ## License
 
 MIT
+
+&copy; 2015-2017 Mike McNeil

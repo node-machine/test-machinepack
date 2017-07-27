@@ -2,7 +2,7 @@
  * Module depenencies
  */
 
-var _ = require('lodash');
+var _ = require('@sailshq/lodash');
 var runAllTests = require('./run-all-tests');
 
 

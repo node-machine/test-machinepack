@@ -5,7 +5,7 @@
 var fs = require('fs');
 var path = require('path');
 var util = require('util');
-var _ = require('lodash');
+var _ = require('@sailshq/lodash');
 var async = require('async');
 require('json5/lib/require');//<<replace's nodejs' require to support requiring of .json5 files
 
