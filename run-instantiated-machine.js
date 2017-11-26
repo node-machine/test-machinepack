@@ -40,7 +40,7 @@ module.exports = require('machine').build({
 
     cantStringifyOutput: {
       description: 'The return value could not be stringified into JSON - perhaps it contains circular references?',
-      example: {
+      outputExample: {
         outcome: 'success',
         output: '===',
         inspectedOutput: '{ stuff: "things" }',
@@ -55,7 +55,7 @@ module.exports = require('machine').build({
       'Note that we use the `===` exemplar here.  This is necessary because it is the simplest '+
       'way to represent `output: undefined`.  Even if we set the `output` facet to `===`, since '+
       'the base value for the ref type is `null` as of rttc@9.3.0, that wouldn\'t work either.',
-      example: '===',
+      outputExample: '===',
       // {
       //   outcome: 'success',
       //   output: '===?' (but also could be `undefined`),

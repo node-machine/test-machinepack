@@ -56,7 +56,7 @@ module.exports = require('machine').build({
       'Note that we use the `===` exemplar here.  This is necessary because it is the simplest '+
       'way to represent `output: undefined`.  Even if we set the `output` facet to `===`, since '+
       'the base value for the ref type is `null` as of rttc@9.3.0, that wouldn\'t work either.',
-      example: '===',
+      outputExample: '===',
       // {
       //   message: 'Output returned by the `finglebär` machine\'s "foobar" exit could not be stringified...etc',
       //   outcome: 'success',
@@ -74,7 +74,7 @@ module.exports = require('machine').build({
       'the simplest way to represent `actual.output === undefined`.  Even if we set the `output` '+
       'facet to `===`, since the base value for the ref type is `null` as of rttc@9.3.0, that '+
       'wouldn\'t work either.',
-      example: {
+      outputExample: {
         message: 'Expected outcome was "success" but actually the machine triggered its "error" exit.',
         wrongOutcome: false,
         wrongOutput: false,
@@ -102,7 +102,7 @@ module.exports = require('machine').build({
       'Note that we use the `===` exemplar here.  This is necessary because it is the simplest '+
       'way to represent `output: undefined`.  Even if we set the `output` facet to `===`, since '+
       'the base value for the ref type is `null` as of rttc@9.3.0, that wouldn\'t work either.',
-      example: '===',
+      outputExample: '===',
       // {
       //   outcome: 'success',
       //   output: '===?' (but also could be `undefined`),
