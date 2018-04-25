@@ -10,7 +10,15 @@ var async = require('async');
 require('json5/lib/require');//<<replace's nodejs' require to support requiring of .json5 files
 
 
-module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
+module.exports = function (mpPath, singleMachineToTest, beforeRunningAnyTests, eachTestSuite, done){
+  // Support optional singleMachineToTest
+  if (arguments.length < 5 || _.isFunction(singleMachineToTest)) {
+    done = arguments[3];
+    eachTestSuite = arguments[2];
+    beforeRunningAnyTests = arguments[1];
+
+    singleMachineToTest = false;
+  }
 
   // Use provided machinepack path
   var mainPath = path.resolve(mpPath);
@@ -44,6 +52,16 @@ module.exports = function (mpPath, beforeRunningAnyTests, eachTestSuite, done){
     }
     catch (e) {
       return done(new Error(util.format('Encountered error loading or parsing pack\'s package.json file (located at `%s`). Details:\n',packageJsonPath, e)));
+    }
+
+    if (singleMachineToTest) {
+      console.warn('Testing single machine:', singleMachineToTest);
+
+      if (machineIdentities.indexOf(singleMachineToTest) == -1) {
+        return done(new Error(util.format('Unknown machine "%s"', singleMachineToTest)));
+      }
+
+      machineIdentities = [singleMachineToTest];
     }
 
     var missingSuites = [];
