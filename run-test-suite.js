@@ -168,7 +168,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
 
               // If output assertion is a string, but the machine is expecting JSON
               // then attempt to parse the output assertion before performing the check.
-              var isExpectingJson = (typeSchema !== 'string' && typeSchema !== 'number' && typeSchema !== 'boolean' && typeSchema !== 'lamda');
+              var isExpectingJson = (typeSchema !== 'string' && typeSchema !== 'number' && typeSchema !== 'boolean' && typeSchema !== 'lamda' && typeSchema !== 'ref');
               if (_.isString(outputAssertion) && isExpectingJson) {
                 try {
                   outputAssertion = JSON.parse(outputAssertion);
