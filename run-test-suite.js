@@ -159,7 +159,7 @@ module.exports = function (Pack, testSuite, eachTest, done){
           // between pieces, and for use in decoding the expected output below.
           var typeSchema;
           try {
-            typeSchema = rttc.infer(exitDef.example);
+            typeSchema = rttc.infer(exitDef.outputExample);
 
             // If it's present, now hydrate the `outputAssertion` for this test
             // (the expected return value) in case it contains any stringified lamda functios

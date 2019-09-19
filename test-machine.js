@@ -247,11 +247,11 @@ module.exports = require('machine').build({
             var exitDef = machineInstance.exits[whatActuallyHappened.outcome];
             // and use it to infer the expected `typeSchema` in order to do a
             // better comparison with isEqual().
-            if (_.isUndefined(exitDef.example)) {
+            if (_.isUndefined(exitDef.outputExample)) {
               failureReport.wrongOutput = !rttc.isEqual(outputAssertion, whatActuallyHappened.output);
             }
             else {
-              var typeSchema = rttc.infer(exitDef.example);
+              var typeSchema = rttc.infer(exitDef.outputExample);
               failureReport.wrongOutput = !rttc.isEqual(outputAssertion, whatActuallyHappened.output, typeSchema);
             }
           }
